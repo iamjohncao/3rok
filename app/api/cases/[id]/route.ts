@@ -1,10 +1,10 @@
 import { json, requireAccount } from "../../../../lib/account.server";
 import { CaseStoreError, SupabaseCaseStore } from "../../../../lib/case-store.server";
-import { UUID, parseCaseDocument } from "../../../../lib/case-validate";
+import { MAX_CASE_BYTES, UUID, parseCaseDocument } from "../../../../lib/case-validate";
 
 type Context = { params: Promise<{ id: string }> };
 
-const MAX_BODY_BYTES = 4 * 1024 * 1024; // under Vercel's request-body limit
+const MAX_BODY_BYTES = MAX_CASE_BYTES;
 
 function failure(error: unknown) {
   if (error instanceof CaseStoreError) {

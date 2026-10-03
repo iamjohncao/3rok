@@ -43,6 +43,8 @@ describe("lib/case contract", () => {
       "kept",
       "rejected",
       "hand_edit",
+      "record_added",
+      "record_replaced",
       "export",
     ]);
   });

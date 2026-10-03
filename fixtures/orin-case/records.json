@@ -1,0 +1,303 @@
+{
+  "records": [
+    {
+      "record_id": "orin-agx-identity",
+      "record_type": "chip-identity",
+      "chip_family": "Jetson Orin",
+      "part_number": "Jetson AGX Orin module",
+      "test_or_model": "AFRL REACT Orin AGX report",
+      "particle_or_stress": null,
+      "split": "train",
+      "source_url": "https://exa.ai/library/publication/k9jg4jz8r66",
+      "value_status": "measured",
+      "body": {
+        "chip_id": "nvidia_jetson_agx_orin",
+        "node": "not_reported",
+        "die_area": "not_reported",
+        "level_tested": "module",
+        "memory_ecc": "not_reported",
+        "serials": "not_reported",
+        "date_code": "not_reported"
+      }
+    },
+    {
+      "record_id": "orin-nx-identity",
+      "record_type": "chip-identity",
+      "chip_family": "Jetson Orin",
+      "part_number": "Jetson Orin NX module",
+      "test_or_model": "Orin NX SEE, UPC",
+      "particle_or_stress": null,
+      "split": "train",
+      "source_url": "https://upcommons.upc.edu/bitstreams/ef814395-1619-43ee-ba00-6a89f0c16d83/download",
+      "value_status": "measured",
+      "body": {
+        "chip_id": "jetson_orin_nx",
+        "node": "not_reported",
+        "die_area": "not_reported",
+        "level_tested": "module",
+        "memory_ecc": "LPDDR5, ECC not_reported",
+        "serials": "not_reported",
+        "date_code": "not_reported"
+      }
+    },
+    {
+      "record_id": "tid-agx-co60",
+      "record_type": "tid",
+      "chip_family": "Jetson Orin",
+      "part_number": "Jetson AGX Orin module",
+      "test_or_model": "Co-60 total dose",
+      "particle_or_stress": "Co-60",
+      "split": "train",
+      "source_url": "https://exa.ai/library/publication/k9jg4jz8r66",
+      "value_status": "measured",
+      "body": {
+        "source": "Co-60",
+        "energy": "not_reported",
+        "dose_rate": "not_reported",
+        "bias": "not_reported",
+        "temperature": "not_reported",
+        "dose_steps": "not_reported",
+        "failure_dose": "42 krad(Si)",
+        "failure_mode": "not_reported",
+        "anneal": "not_reported"
+      }
+    },
+    {
+      "record_id": "tid-agx-proton-150mev",
+      "record_type": "tid",
+      "chip_family": "Jetson Orin",
+      "part_number": "Jetson AGX Orin module",
+      "test_or_model": "150 MeV proton total dose",
+      "particle_or_stress": "proton",
+      "split": "train",
+      "source_url": "https://exa.ai/library/publication/k9jg4jz8r66",
+      "value_status": "measured",
+      "body": {
+        "source": "protons",
+        "energy": "150 MeV",
+        "dose_rate": "not_reported",
+        "bias": "not_reported",
+        "temperature": "not_reported",
+        "dose_steps": "not_reported",
+        "failure_dose": "6 krad(Si)",
+        "failure_mode": "MPQ86960 power regulators failed, long before the SoC did",
+        "anneal": "not_reported"
+      }
+    },
+    {
+      "record_id": "tid-agx-proton-64mev",
+      "record_type": "tid",
+      "chip_family": "Jetson Orin",
+      "part_number": "Jetson AGX Orin module",
+      "test_or_model": "64 MeV proton total dose, different facility",
+      "particle_or_stress": "proton",
+      "split": "train",
+      "source_url": "https://exa.ai/library/publication/k9jg4jz8r66",
+      "value_status": "measured",
+      "body": {
+        "source": "protons",
+        "energy": "64 MeV",
+        "dose_rate": "not_reported",
+        "bias": "not_reported",
+        "temperature": "not_reported",
+        "dose_steps": "not_reported",
+        "failure_dose": "not_reported",
+        "failure_mode": "not_reported",
+        "anneal": "not_reported",
+        "note": "The 6 krad(Si) early failure was not reproduced. The authors attribute the gap to beam energy and test software."
+      }
+    },
+    {
+      "record_id": "tid-agx-redw-2023",
+      "record_type": "tid",
+      "chip_family": "Jetson Orin",
+      "part_number": "Jetson AGX Orin module",
+      "test_or_model": "IEEE REDW 2023 first report",
+      "particle_or_stress": null,
+      "split": "train",
+      "source_url": "https://ieeexplore.ieee.org/document/10265818",
+      "value_status": "measured",
+      "body": {
+        "source": "not_reported",
+        "energy": "not_reported",
+        "dose_rate": "not_reported",
+        "bias": "not_reported",
+        "temperature": "not_reported",
+        "dose_steps": "not_reported",
+        "failure_dose": "19 krad(Si)",
+        "failure_mode": "not_reported",
+        "anneal": "not_reported",
+        "note": "First reported limit. Later work refined it to 42 krad(Si) under Co-60."
+      }
+    },
+    {
+      "record_id": "tid-nx-survived",
+      "record_type": "tid",
+      "chip_family": "Jetson Orin",
+      "part_number": "Jetson Orin NX module",
+      "test_or_model": "Orin NX total dose",
+      "particle_or_stress": null,
+      "split": "train",
+      "source_url": "https://www.researchgate.net/publication/387116286_Total_Ionizing_Dose_Radiation_Testing_of_NVIDIA_Jetson_Orin_NX_System_on_Module",
+      "value_status": "measured",
+      "body": {
+        "source": "not_reported",
+        "energy": "not_reported",
+        "dose_rate": "not_reported",
+        "bias": "not_reported",
+        "temperature": "not_reported",
+        "dose_steps": "not_reported",
+        "failure_dose": "not_reached",
+        "failure_mode": "not_reported",
+        "anneal": "not_reported",
+        "survived_past": "36.2 krad(Si)"
+      }
+    },
+    {
+      "record_id": "see-nx-soc-480mev",
+      "record_type": "see",
+      "chip_family": "Jetson Orin",
+      "part_number": "Jetson Orin NX module",
+      "test_or_model": "TRIUMF 480 MeV protons, SoC",
+      "particle_or_stress": "proton",
+      "split": "train",
+      "source_url": "https://upcommons.upc.edu/bitstreams/ef814395-1619-43ee-ba00-6a89f0c16d83/download",
+      "value_status": "measured",
+      "body": {
+        "energy": "480 MeV",
+        "let": "not_applicable",
+        "tilt": "not_reported",
+        "flux": "not_reported",
+        "fluence": "5.65e9 p/cm2",
+        "events_by_type": "SEU",
+        "cross_section": "about 3.9e-9 cm2 (SoC SEU)",
+        "confidence_interval": "lower and upper bounds are in the source and are not transcribed here",
+        "power_mode": "15 W",
+        "workload": "not_reported",
+        "sdc_count": "not_reported"
+      }
+    },
+    {
+      "record_id": "see-nx-gpu-480mev",
+      "record_type": "see",
+      "chip_family": "Jetson Orin",
+      "part_number": "Jetson Orin NX module",
+      "test_or_model": "TRIUMF 480 MeV protons, GPU subsystem",
+      "particle_or_stress": "proton",
+      "split": "train",
+      "source_url": "https://upcommons.upc.edu/bitstreams/ef814395-1619-43ee-ba00-6a89f0c16d83/download",
+      "value_status": "measured",
+      "body": {
+        "energy": "480 MeV",
+        "let": "not_applicable",
+        "tilt": "not_reported",
+        "flux": "not_reported",
+        "fluence": "not_reported",
+        "events_by_type": "SEFI and SEU, GPU subsystem",
+        "cross_section": "SEFI 6.5e-10 cm2, SEU 3.5e-10 cm2",
+        "confidence_interval": "lower and upper bounds are in the source and are not transcribed here",
+        "power_mode": "not_reported",
+        "workload": "not_reported",
+        "sdc_count": "not_reported"
+      }
+    },
+    {
+      "record_id": "traj-dawn-dusk-assumed",
+      "record_type": "trajectory",
+      "chip_family": "Jetson Orin",
+      "part_number": "Jetson AGX Orin module",
+      "test_or_model": "Placeholder dawn-dusk sun-synchronous orbit",
+      "particle_or_stress": null,
+      "split": "train",
+      "source_url": "https://github.com/iamjohncao/3rok/blob/main/fixtures/orin-case/README.md",
+      "value_status": "assumed",
+      "body": {
+        "altitude_km": 650,
+        "inclination": "sun-synchronous",
+        "eccentricity": 0,
+        "ltan_hours": 6,
+        "epoch": "2027-01-01T00:00:00Z",
+        "duration": "5 years"
+      }
+    },
+    {
+      "record_id": "env-dawn-dusk-suncatcher",
+      "record_type": "environment",
+      "chip_family": "not_chip_specific",
+      "part_number": "not_chip_specific",
+      "test_or_model": "Suncatcher preprint estimate, shielded dawn-dusk orbit",
+      "particle_or_stress": null,
+      "split": "train",
+      "source_url": "https://arxiv.org/html/2511.19468v2",
+      "value_status": "derived",
+      "body": {
+        "model": "not_reported",
+        "version": "not_reported",
+        "mode": "not_reported",
+        "percentile": "not_reported",
+        "energies": "not_reported",
+        "shielding": "shielded, thickness not_reported",
+        "dose": "about 150 rad(Si)/year",
+        "units": "rad(Si)/year"
+      }
+    },
+    {
+      "record_id": "place-a1-assumed",
+      "record_type": "placement",
+      "chip_family": "Jetson Orin",
+      "part_number": "Jetson AGX Orin module",
+      "test_or_model": "Placeholder placement",
+      "particle_or_stress": null,
+      "split": "train",
+      "source_url": "https://github.com/iamjohncao/3rok/blob/main/fixtures/orin-case/README.md",
+      "value_status": "assumed",
+      "body": {
+        "location": "A1",
+        "shielding_material": "Al",
+        "shielding_thickness": "5 mm",
+        "shield_mm_Al": 5,
+        "thermal_coupling": "not_reported"
+      }
+    },
+    {
+      "record_id": "outcome-synthetic-failure",
+      "record_type": "outcome",
+      "chip_family": "Jetson Orin",
+      "part_number": "Jetson AGX Orin module",
+      "test_or_model": "Synthetic failure, not an observation",
+      "particle_or_stress": null,
+      "split": "holdout",
+      "source_url": "https://github.com/iamjohncao/3rok/blob/main/fixtures/orin-case/README.md",
+      "value_status": "assumed",
+      "body": {
+        "time_window": "5 years",
+        "position_reference": "traj-dawn-dusk-assumed",
+        "upsets": "not_reported",
+        "resets": "not_reported",
+        "uncorrectable_ecc": "not_reported",
+        "temperatures": "not_reported",
+        "failure_time_years": 4.5
+      }
+    },
+    {
+      "record_id": "outcome-synthetic-survivor",
+      "record_type": "outcome",
+      "chip_family": "Jetson Orin",
+      "part_number": "Jetson AGX Orin module",
+      "test_or_model": "Synthetic survivor, not an observation",
+      "particle_or_stress": null,
+      "split": "holdout",
+      "source_url": "https://github.com/iamjohncao/3rok/blob/main/fixtures/orin-case/README.md",
+      "value_status": "assumed",
+      "body": {
+        "time_window": "2 years",
+        "position_reference": "traj-dawn-dusk-assumed",
+        "upsets": "not_reported",
+        "resets": "not_reported",
+        "uncorrectable_ecc": "not_reported",
+        "temperatures": "not_reported",
+        "censor_time_years": 2
+      }
+    }
+  ]
+}

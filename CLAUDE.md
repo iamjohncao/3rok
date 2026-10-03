@@ -27,6 +27,7 @@ Chip-test data in, a CCSDS OEM flight file out, flown on a globe. Read `docs/mvp
 ## Secrets and hosting
 
 - Vercel project `3rok` serves https://3rok.vercel.app from `main`. `3rok1.vercel.app` is a different project: leave it alone.
+- `vercel.json` must stay. It sets `"framework": "nextjs"`. Without it Vercel sees `starmind-physics/pyproject.toml` and builds the repo as Python ("No python entrypoint found").
 - Keys go in Vercel environment variables. Never commit one, and never echo one into chat or logs. `XAI_API_KEY` is server only.
 - Supabase Auth and Postgres from Phase 3. Row-level security is on. The app never uses the service-role key.
 

@@ -14,6 +14,8 @@ import {
   type LogEntry,
 } from "./case";
 
+/** The most the case route accepts in one save, under Vercel's request-body limit. */
+export const MAX_CASE_BYTES = 4 * 1024 * 1024;
 export const MAX_CASE_RECORDS = 10_000;
 export const MAX_CASE_LOG_ENTRIES = 50_000;
 export const MAX_CASE_NAME_LENGTH = 200;

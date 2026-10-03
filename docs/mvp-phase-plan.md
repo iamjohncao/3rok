@@ -146,6 +146,8 @@ export type LogKind =
   | "kept"
   | "rejected"
   | "hand_edit"
+  | "record_added"
+  | "record_replaced"
   | "export";
 
 export type LogEntry = {
@@ -308,7 +310,7 @@ Fixture OEM, checked into `fixtures/minimal.oem`, is the shape example in the pr
 
 **What is being built.** Upload and replace for the nine record types in the guidelines. Mapping, not a new schema.
 
-**Owns.** `lib/ingest.ts`, `lib/ingest.test.ts`, the Data region of the case screen.
+**Owns.** `lib/ingest.ts`, `lib/ingest-xlsx.ts`, `lib/attachment-store.ts`, their tests, the upload and replace functions in `lib/case-ops.ts` (`previewIngest`, `applyIngest`, `attachPdf`, `chipIdFor`, `toggleChip`), the Data region of the case screen (`components/case/DataUpload.tsx` and the chip selector), and `fixtures/orin-case/`.
 
 **Done.** A CSV or JSON file becomes `CaseRecord` rows. Required metadata is `record_id`, `record_type`, `chip_family`, `part_number`, `test_or_model`, `split`, `source_url`, and `value_status`. `particle_or_stress` may be empty. A missing required field rejects the file with the field name. A missing `split` is an error. It is not coerced to `train`. `value_status` accepts only `measured`, `derived`, `assumed`, and `not_observable`. `record_type` accepts only the nine ids in `lib/case.ts`.
 
@@ -327,6 +329,17 @@ The minimum fields inside `body`, by type, match the guidelines table:
 | `provenance` | source, standard, facility, date, units |
 
 XLSX and Markdown are accepted when they carry the same fields. A PDF rides along under an existing `record_id`. It does not become a record by itself. Files over 100 MB are rejected. Numbers stay in the CSV or JSON body.
+
+**Decisions this phase made, so later lanes read the same thing.**
+
+- *Shapes.* JSON is a list of records or an object with a `records` list. CSV may use commas, semicolons, or tabs, with quotes and a BOM. Markdown is every pipe table in the file. XLSX is every non-empty sheet, read as a table with a header row. Headers are case-insensitive and spaces or hyphens count as underscores. `particle_or_stress` and `source_filename` are the only optional metadata.
+- *Body.* A record gives either a `body` field (a JSON object, or JSON text kept as written) or its other columns, which become the body. Both at once is an error, so a misspelled metadata column is not hidden. The saved body is JSON text. A value a source does not give is written `not_reported`, and `not_observable` is also a value, so a missing field and an honest blank are different things.
+- *Accepted whole or refused whole.* Every problem in a file is listed with its row (`Row 3`, `Record 2`, `Table 2, row 2`, `Sheet "X", row 3`) and field. Nothing from a refused file is saved. A file holds at most 10,000 records, and `record_id` is unique inside it.
+- *What later phases read.* An outcome has a numeric `failure_time_years` or a numeric `censor_time_years`, not both. A trajectory body holds an `oem` string that passes `lib/oem.ts`, or the elements, including `ltan_hours`. A placement body holds `shield_mm_Al`, or a material and a thickness. Phase 6 reads `ltan_hours` and `shield_mm_Al` as numbers and refuses when either is missing.
+- *Preview, then save.* Choosing a file reads it and shows the rows it would add and the rows it would replace. Nothing is saved until the person confirms. A case is saved in one request and the route accepts at most 4 MB (`MAX_CASE_BYTES`), so a preview that would push the case past that says so and cannot be confirmed.
+- *Replace.* A row whose `record_id` is already in the case is replaced in place. Each replacement appends a `record_replaced` entry that names the `record_id` and the type, and a replacement that changes the type says both. One `record_added` entry per upload counts the new rows by type. A replaced row keeps its old `source_filename` when the new row has none.
+- *PDF.* The person picks the record. The file must start with `%PDF-`. The case stores only the file name in `source_filename` and logs it as `record_replaced`. The bytes stay in this browser's IndexedDB (`3rok-attachments`). They are not saved to the account, and the screen says so.
+- *Chip selector.* A chip-identity row's id is its body `chip_id`, else its `part_number`. Checking one writes it to `chipIds`. With none checked, every chip-identity row counts toward the family on the case list. The box shows the saved state, so it checks when the save lands.
 
 The chip selector writes `chipIds` from the chip-identity rows the person checks. The case list's chip family comes from those rows.
 

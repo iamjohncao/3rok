@@ -4,6 +4,7 @@
 // interface.
 
 import type { CaseDocument } from "./case";
+import { chipIdFor } from "./case-ops";
 import { idbFinished, idbResult, resolveIndexedDb } from "./idb";
 
 export type CaseSummary = {
@@ -30,13 +31,9 @@ export const LOCAL_ACCOUNT_ID = "local";
 
 function chipFamily(doc: CaseDocument): string | null {
   const identity = doc.records.filter((record) => record.record_type === "chip-identity");
-  // The chip selector (Phase 4) writes chipIds. Until it does, every chip-identity row counts.
+  // The chip selector writes chipIds. With none selected, every chip-identity row counts.
   const selected =
-    doc.chipIds.length > 0
-      ? identity.filter(
-          (record) => doc.chipIds.includes(record.part_number) || doc.chipIds.includes(record.record_id),
-        )
-      : identity;
+    doc.chipIds.length > 0 ? identity.filter((record) => doc.chipIds.includes(chipIdFor(record))) : identity;
   const families = [...new Set(selected.map((record) => record.chip_family).filter(Boolean))];
   return families.length > 0 ? families.join(", ") : null;
 }

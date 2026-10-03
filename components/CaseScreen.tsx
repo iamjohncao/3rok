@@ -2,8 +2,16 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { CaseDocument } from "../lib/case";
-import { CASE_NAME_MAX_LENGTH, applyHandEdit, renameCase } from "../lib/case-ops";
+import { getAttachmentStore } from "../lib/attachment-store";
+import type { CaseDocument, CaseRecord } from "../lib/case";
+import {
+  CASE_NAME_MAX_LENGTH,
+  applyHandEdit,
+  applyIngest,
+  attachPdf,
+  renameCase,
+  toggleChip,
+} from "../lib/case-ops";
 import { getCaseStore } from "../lib/case-store";
 import { ACCOUNTS_NOT_SET_UP } from "../lib/supabase/env";
 import { useAccount } from "./AccountProvider";
@@ -119,24 +127,28 @@ export function CaseScreen({ id }: { id: string }) {
   }, [id, userId]);
 
   // Saves run one at a time, each starting from the last saved document, so a
-  // rename and a hand edit can never overwrite each other.
+  // rename and a hand edit can never overwrite each other. Resolves true unless the
+  // save failed, so a caller never reports a save that did not happen.
   const update = useCallback((change: (doc: CaseDocument) => CaseDocument) => {
-    queue.current = queue.current.then(async () => {
+    const run = queue.current.then(async (): Promise<boolean> => {
       const current = latest.current;
       const owner = accountRef.current;
-      if (!current || owner === null) return;
+      if (!current || owner === null) return false;
       const next = change(current);
-      if (next === current) return;
+      if (next === current) return true;
       try {
         await getCaseStore().save(owner, next);
         latest.current = next;
         setState({ status: "ready", doc: next });
         setSaveError(null);
+        return true;
       } catch (error) {
         setSaveError(messageOf(error));
+        return false;
       }
     });
-    return queue.current;
+    queue.current = run.then(() => undefined);
+    return run;
   }, []);
 
   if (account.status === "unavailable") {
@@ -180,7 +192,9 @@ export function CaseScreen({ id }: { id: string }) {
       <CaseHeader
         key={doc.id}
         doc={doc}
-        onRename={(name) => update((current) => renameCase(current, name, new Date().toISOString()))}
+        onRename={async (name) => {
+          await update((current) => renameCase(current, name, new Date().toISOString()));
+        }}
       />
       {saveError ? (
         <p className="save-error body-sm" role="alert">
@@ -188,10 +202,30 @@ export function CaseScreen({ id }: { id: string }) {
         </p>
       ) : null}
       <div className="case-grid">
-        <DataRegion doc={doc} />
+        <DataRegion
+          doc={doc}
+          onIngest={(records: CaseRecord[], filename: string) =>
+            update((current) => applyIngest(current, records, filename, new Date().toISOString()))
+          }
+          onAttachPdf={async (recordId, filename, bytes) => {
+            // The bytes stay in this browser. The case keeps only the file's name.
+            const owner = accountRef.current;
+            if (owner !== null) {
+              await getAttachmentStore()
+                ?.set(owner, doc.id, recordId, filename, bytes)
+                .catch(() => undefined);
+            }
+            return update((current) => attachPdf(current, recordId, filename, new Date().toISOString()));
+          }}
+          onToggleChip={(chipId) => {
+            void update((current) => toggleChip(current, chipId, new Date().toISOString()));
+          }}
+        />
         <AlgorithmRegion
           doc={doc}
-          onHandEdit={(text) => update((current) => applyHandEdit(current, text, new Date().toISOString()))}
+          onHandEdit={async (text) => {
+            await update((current) => applyHandEdit(current, text, new Date().toISOString()));
+          }}
         />
         <ActivityRegion doc={doc} />
         <ScoreRegion doc={doc} />

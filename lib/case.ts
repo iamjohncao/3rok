@@ -51,6 +51,8 @@ export const LOG_KINDS = [
   "kept",
   "rejected",
   "hand_edit",
+  "record_added",
+  "record_replaced",
   "export",
 ] as const;
 export type LogKind = (typeof LOG_KINDS)[number];
