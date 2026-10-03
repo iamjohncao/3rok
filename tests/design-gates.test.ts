@@ -53,6 +53,38 @@ describe("design-system rules", () => {
   });
 });
 
+describe("testing page (Phase 8)", () => {
+  const testingFiles = [
+    "app/test/page.tsx",
+    "components/TestScreen.tsx",
+    "components/Globe.tsx",
+    "components/GlobeLoader.tsx",
+    "components/OemReadout.tsx",
+    "components/LaunchSpecs.tsx",
+    "components/PhysicsPanel.tsx",
+    "components/FitPanel.tsx",
+  ].map((file) => join(root, file));
+
+  it("never bundles Cesium: it loads from public/cesium with a script tag", () => {
+    // Type-only uses (`typeof import("cesium")`, `import("cesium").Viewer`) are fine.
+    expect(
+      offenders(/await\s+import\(\s*["']cesium|^\s*import\s+(?!type\b)[^\n]*["']cesium|import\s+["']cesium\//m),
+    ).toEqual([]);
+  });
+
+  it("does not call Grok, so the globe cannot propose a new file", () => {
+    expect(offenders(/api\/grok|api\.x\.ai|XAI_API_KEY/i, testingFiles)).toEqual([]);
+  });
+
+  it("does not touch the case store, so scrubbing and playing write no log", () => {
+    expect(offenders(/case-store|case-ops|getCaseStore|applyHandEdit/, testingFiles)).toEqual([]);
+  });
+
+  it("does not show a thrust, Mach, throttle, propellant, or dynamic-pressure reading", () => {
+    expect(offenders(/\bthrust\b|\bmach\b|throttle|propellant|dynamic pressure/i, testingFiles)).toEqual([]);
+  });
+});
+
 describe("product language", () => {
   it('never calls the container a "project"', () => {
     expect(offenders(/\bprojects?\b/i)).toEqual([]);

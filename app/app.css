@@ -199,23 +199,146 @@ body {
   white-space: pre;
 }
 
-/* /test: the globe is most of the viewport, specs sit beside it. */
+/* /test: the globe is most of the viewport, specs sit beside it and scroll on their own. */
+:root {
+  --nav-height: 57px; /* the app nav's height, checked in the browser test */
+}
+
 .test-layout {
-  flex: 1;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 360px;
+  grid-template-columns: minmax(0, 1fr) 380px;
   gap: var(--space-4);
+  height: calc(100dvh - var(--nav-height));
+  min-height: 0;
   padding: var(--space-4);
 }
 
 .globe-frame {
+  position: relative;
   min-height: 0;
+  overflow: hidden;
+}
+
+.globe {
+  position: absolute;
+  inset: 0;
+}
+
+.globe__canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.globe__failure {
+  position: absolute;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  left: var(--space-4);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line-strong);
+  background: var(--surface-200);
 }
 
 .specs {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.fixture-banner {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line-strong);
+  background: var(--surface-200);
+}
+
+.fixture-banner .eyebrow {
+  display: block;
+  margin-bottom: var(--space-1);
+  color: var(--ink);
+}
+
+.controls {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.controls__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.scrubber {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.scrubber input {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.readouts {
+  display: grid;
+  gap: var(--space-3);
+  margin: var(--space-3) 0 0;
+}
+
+.readout-row {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.readout-row dt {
+  margin: 0;
+}
+
+.readout-row__value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.vector {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fit-pick {
+  margin: var(--space-3) 0 var(--space-2);
+}
+
+.class-list {
+  display: grid;
+  gap: var(--space-3);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.class-row {
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+}
+
+.class-row--picked {
+  border-color: var(--ink);
+}
+
+.class-row p {
+  margin: 0 0 var(--space-2);
+}
+
+.class-row__name {
+  color: var(--ink-subtle);
 }
 
 /* /account */
@@ -255,7 +378,15 @@ body {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .test-layout {
+    height: auto;
+  }
+
   .globe-frame {
-    min-height: 60dvh;
+    height: 60dvh;
+  }
+
+  .specs {
+    overflow-y: visible;
   }
 }
