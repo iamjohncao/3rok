@@ -4,7 +4,10 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CaseDocument } from "../lib/case";
 import { CASE_NAME_MAX_LENGTH, applyHandEdit, renameCase } from "../lib/case-ops";
-import { LOCAL_ACCOUNT_ID, getCaseStore } from "../lib/case-store";
+import { getCaseStore } from "../lib/case-store";
+import { ACCOUNTS_NOT_SET_UP } from "../lib/supabase/env";
+import { useAccount } from "./AccountProvider";
+import { SignInPrompt } from "./SignInPrompt";
 import { ActivityRegion } from "./case/ActivityRegion";
 import { AlgorithmRegion } from "./case/AlgorithmRegion";
 import { DataRegion } from "./case/DataRegion";
@@ -85,18 +88,24 @@ function CaseHeader({ doc, onRename }: { doc: CaseDocument; onRename: (name: str
   );
 }
 
-// One case: Data, Activity, Algorithm, Score. Cases are saved in this browser until accounts arrive.
+// One case: Data, Activity, Algorithm, Score. Saved to the signed-in account.
 export function CaseScreen({ id }: { id: string }) {
+  const account = useAccount();
+  const userId = account.status === "signed-in" ? account.userId : null;
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [saveError, setSaveError] = useState<string | null>(null);
   const latest = useRef<CaseDocument | null>(null);
+  const accountRef = useRef<string | null>(userId);
   const queue = useRef<Promise<void>>(Promise.resolve());
+  accountRef.current = userId;
 
   useEffect(() => {
+    if (userId === null) return;
     let live = true;
+    setState({ status: "loading" });
     (async () => {
       try {
-        const doc = await getCaseStore().get(LOCAL_ACCOUNT_ID, id);
+        const doc = await getCaseStore().get(userId, id);
         if (!live) return;
         latest.current = doc;
         setState(doc ? { status: "ready", doc } : { status: "missing" });
@@ -107,18 +116,19 @@ export function CaseScreen({ id }: { id: string }) {
     return () => {
       live = false;
     };
-  }, [id]);
+  }, [id, userId]);
 
   // Saves run one at a time, each starting from the last saved document, so a
   // rename and a hand edit can never overwrite each other.
   const update = useCallback((change: (doc: CaseDocument) => CaseDocument) => {
     queue.current = queue.current.then(async () => {
       const current = latest.current;
-      if (!current) return;
+      const owner = accountRef.current;
+      if (!current || owner === null) return;
       const next = change(current);
       if (next === current) return;
       try {
-        await getCaseStore().save(LOCAL_ACCOUNT_ID, next);
+        await getCaseStore().save(owner, next);
         latest.current = next;
         setState({ status: "ready", doc: next });
         setSaveError(null);
@@ -129,7 +139,15 @@ export function CaseScreen({ id }: { id: string }) {
     return queue.current;
   }, []);
 
-  if (state.status === "loading") {
+  if (account.status === "unavailable") {
+    return (
+      <section className="frame frame--empty" role="alert">
+        <p className="body">{ACCOUNTS_NOT_SET_UP}</p>
+      </section>
+    );
+  }
+  if (account.status === "signed-out") return <SignInPrompt what="Sign in to open this case." />;
+  if (account.status === "loading" || state.status === "loading") {
     return (
       <section className="frame frame--empty" role="status">
         <p className="body rok-muted">Loading case.</p>
@@ -140,7 +158,7 @@ export function CaseScreen({ id }: { id: string }) {
     return (
       <section className="frame frame--empty">
         <div>
-          <p className="body rok-muted">This case is not saved in this browser.</p>
+          <p className="body rok-muted">This case is not saved to your account.</p>
           <Link className="rok-btn button" href="/cases">
             Back to cases
           </Link>

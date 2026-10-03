@@ -1,7 +1,8 @@
 "use client";
 
-import { useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import type { CaseDocument } from "../../lib/case";
+import { getDraftStore } from "../../lib/draft-store";
 import { validateOem } from "../../lib/oem";
 import { Button } from "../ui/Button";
 import { Panel } from "../ui/Panel";
@@ -48,8 +49,47 @@ export function AlgorithmRegion({
   const saved = doc.workingOem ?? "";
   const [draft, setDraft] = useState(saved);
   const [saving, setSaving] = useState(false);
+  const [restored, setRestored] = useState(false);
+  const [draftChecked, setDraftChecked] = useState(false);
   const textareaId = useId();
   const dirty = draft !== saved;
+  const owner = doc.accountId ?? "local";
+
+  // The unsaved text lives in this browser, so a reload does not lose it and a keystroke
+  // never goes to the server. Restore it once when the case opens...
+  useEffect(() => {
+    const drafts = getDraftStore();
+    if (!drafts) {
+      setDraftChecked(true);
+      return;
+    }
+    let live = true;
+    drafts
+      .get(owner, doc.id)
+      .then((text) => {
+        if (live && text !== null && text !== saved) {
+          setDraft(text);
+          setRestored(true);
+        }
+      })
+      .catch(() => undefined)
+      .finally(() => live && setDraftChecked(true));
+    return () => {
+      live = false;
+    };
+    // `saved` is read once, on open. Later saves are handled by the effect below.
+  }, [owner, doc.id]);
+
+  // ...then keep it up to date, and clear it once it matches what is saved.
+  useEffect(() => {
+    const drafts = getDraftStore();
+    if (!drafts || !draftChecked) return;
+    const timer = setTimeout(() => {
+      const work = draft === saved ? drafts.clear(owner, doc.id) : drafts.set(owner, doc.id, draft);
+      work.catch(() => undefined);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [draft, saved, draftChecked, owner, doc.id]);
 
   async function save() {
     setSaving(true);
@@ -86,6 +126,12 @@ export function AlgorithmRegion({
             onChange={(event) => setDraft(event.target.value)}
             placeholder="Paste or write an OEM here. Saving logs the edit."
           />
+          {restored && dirty ? (
+            <p className="body-sm rok-subtle" role="status">
+              Restored an unsaved draft from this browser. It is saved to your account only when you save the
+              edit.
+            </p>
+          ) : null}
           <OemCheck text={draft} />
           <div className="algorithm-actions">
             <Button size="sm" disabled={!dirty || saving} onClick={save}>

@@ -4,6 +4,7 @@
 // interface.
 
 import type { CaseDocument } from "./case";
+import { idbFinished, idbResult, resolveIndexedDb } from "./idb";
 
 export type CaseSummary = {
   id: string;
@@ -63,29 +64,12 @@ function rowKey(accountId: string, id: string): string {
   return `${accountId}/${id}`;
 }
 
-function result<T>(request: IDBRequest<T>): Promise<T> {
-  return new Promise((resolve, reject) => {
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-
-function finished(transaction: IDBTransaction): Promise<void> {
-  return new Promise((resolve, reject) => {
-    transaction.oncomplete = () => resolve();
-    transaction.onerror = () => reject(transaction.error);
-    transaction.onabort = () => reject(transaction.error);
-  });
-}
-
 export class IndexedDbCaseStore implements CaseStore {
   private readonly factory: IDBFactory;
   private opened: Promise<IDBDatabase> | null = null;
 
   constructor(factory?: IDBFactory) {
-    const resolved = factory ?? (typeof indexedDB === "undefined" ? undefined : indexedDB);
-    if (!resolved) throw new Error("This browser cannot save cases because IndexedDB is unavailable.");
-    this.factory = resolved;
+    this.factory = resolveIndexedDb(factory);
   }
 
   private database(): Promise<IDBDatabase> {
@@ -103,7 +87,7 @@ export class IndexedDbCaseStore implements CaseStore {
 
   async list(accountId: string): Promise<CaseSummary[]> {
     const db = await this.database();
-    const rows = await result<Row[]>(
+    const rows = await idbResult<Row[]>(
       db.transaction(STORE_NAME, "readonly").objectStore(STORE_NAME).index(BY_ACCOUNT).getAll(accountId),
     );
     return rows
@@ -113,7 +97,7 @@ export class IndexedDbCaseStore implements CaseStore {
 
   async get(accountId: string, id: string): Promise<CaseDocument | null> {
     const db = await this.database();
-    const row = await result<Row | undefined>(
+    const row = await idbResult<Row | undefined>(
       db.transaction(STORE_NAME, "readonly").objectStore(STORE_NAME).get(rowKey(accountId, id)),
     );
     return row?.doc ?? null;
@@ -124,7 +108,7 @@ export class IndexedDbCaseStore implements CaseStore {
     const transaction = db.transaction(STORE_NAME, "readwrite");
     const row: Row = { key: rowKey(accountId, doc.id), accountId, doc };
     transaction.objectStore(STORE_NAME).put(row);
-    await finished(transaction);
+    await idbFinished(transaction);
   }
 
   /** Releases the connection. Tests use this; the app keeps one open. */
@@ -135,10 +119,65 @@ export class IndexedDbCaseStore implements CaseStore {
   }
 }
 
+/** An error from the case API, with the status it came back with. */
+export class CaseApiError extends Error {
+  constructor(
+    readonly status: number,
+    message: string,
+  ) {
+    super(message);
+    this.name = "CaseApiError";
+  }
+}
+
+async function callApi<T>(path: string, init?: RequestInit): Promise<{ status: number; body: T | null }> {
+  const response = await fetch(path, { cache: "no-store", credentials: "same-origin", ...init });
+  let body: unknown = null;
+  try {
+    body = await response.json();
+  } catch {
+    // An empty or non-JSON body. The status still tells the story.
+  }
+  if (response.status === 404) return { status: 404, body: null };
+  if (!response.ok) {
+    const message =
+      typeof body === "object" && body !== null && "error" in body && typeof body.error === "string"
+        ? body.error
+        : `The request failed (${response.status}).`;
+    throw new CaseApiError(response.status, message);
+  }
+  return { status: response.status, body: body as T };
+}
+
+/**
+ * The saved cases, through the server. The server decides whose cases these are
+ * from the signed-in session, so the account id argument is not sent and cannot
+ * be used to ask for someone else's.
+ */
+export class ApiCaseStore implements CaseStore {
+  async list(_accountId: string): Promise<CaseSummary[]> {
+    const { body } = await callApi<{ cases: CaseSummary[] }>("/api/cases");
+    return body?.cases ?? [];
+  }
+
+  async get(_accountId: string, id: string): Promise<CaseDocument | null> {
+    const { body } = await callApi<{ case: CaseDocument }>(`/api/cases/${encodeURIComponent(id)}`);
+    return body?.case ?? null;
+  }
+
+  async save(_accountId: string, doc: CaseDocument): Promise<void> {
+    await callApi(`/api/cases/${encodeURIComponent(doc.id)}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(doc),
+    });
+  }
+}
+
 let browserStore: CaseStore | null = null;
 
-/** The store the screens use. Phase 3 swaps in the server store here. */
+/** The store the screens use: the signed-in account's saved cases, on the server. */
 export function getCaseStore(): CaseStore {
-  browserStore ??= new IndexedDbCaseStore();
+  browserStore ??= new ApiCaseStore();
   return browserStore;
 }

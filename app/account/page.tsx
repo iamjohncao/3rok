@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
-import { Button } from "../../components/ui/Button";
-import { Field } from "../../components/ui/Field";
-import { Panel } from "../../components/ui/Panel";
+import { AccountScreen } from "../../components/AccountScreen";
 
 export const metadata: Metadata = { title: "Account" };
 
-export default function AccountPage() {
+type AccountPageProps = { searchParams: Promise<{ problem?: string }> };
+
+export default async function AccountPage({ searchParams }: AccountPageProps) {
+  const { problem } = await searchParams;
+
   return (
     <main className="app-main account-main">
       <header className="page-head">
@@ -14,27 +16,7 @@ export default function AccountPage() {
           <h1 className="page-head__title heading-lg">Account</h1>
         </div>
       </header>
-
-      <Panel id="sign-in" title="Sign in">
-        <form className="account-form">
-          <Field label="Email" name="email" type="email" autoComplete="email" disabled />
-          <Field
-            label="Password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            disabled
-          />
-          <div className="account-form__actions">
-            <Button variant="solid" type="submit" disabled>
-              Sign in
-            </Button>
-            <Button variant="quiet" disabled>
-              Create account
-            </Button>
-          </div>
-        </form>
-      </Panel>
+      <AccountScreen problem={problem ?? null} />
     </main>
   );
 }

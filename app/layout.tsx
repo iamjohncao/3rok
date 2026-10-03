@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import "../3rok-design-system/tokens.css";
 import "../3rok-design-system/components/bundle.css";
 import "./app.css";
+import { AccountProvider } from "../components/AccountProvider";
 import { AppNav } from "../components/ui/AppNav";
 
 export const metadata: Metadata = {
@@ -15,8 +16,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" data-theme="dark">
       <body>
-        <AppNav />
-        {children}
+        <AccountProvider>
+          <AppNav />
+          {children}
+        </AccountProvider>
       </body>
     </html>
   );
