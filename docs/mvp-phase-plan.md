@@ -182,7 +182,7 @@ export interface CaseStore {
 }
 ```
 
-`CaseSummary` is the `/cases` row: id, name, chip family from the chip-identity records, whether `optimizedOem` is set, whether `holdoutError` is set, and `updatedAt`.
+`CaseSummary` is the `/cases` row: id, name, chip family from the chip-identity records, whether `optimizedOem` is set, whether `holdoutError` is set, the UTC time of the last log entry (`lastLogAt`, null when the log is empty), and `updatedAt`. `lastLogAt` is here because the Phase 2 list row shows it.
 
 Fixture OEM, checked into `fixtures/minimal.oem`, is the shape example in the product spec. The header comment in that file says the numbers are not a flyable trajectory. Fixture case `fixtures/orin-case/` uses the public Jetson Orin figures already cited in the data guidelines, with `value_status: "measured"` only on figures those citations support. Predictions for that case are labeled Jetson-class. Do not fill an H100 or Rubin lifetime from those rows.
 
