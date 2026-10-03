@@ -19,7 +19,7 @@ Live app: https://3rok.vercel.app (`3rok1.vercel.app` is a different project).
 
 ## Run it
 
-Needs Node 22.12 or newer.
+Needs Node 22 (22.12 or newer). The project pins `22.x`, which is what Vercel builds with.
 
 ```bash
 npm install
