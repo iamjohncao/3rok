@@ -1,0 +1,110 @@
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--surface-100);color:var(--ink);font-family:var(--font-sans);font-size:15px;line-height:24px;-webkit-font-smoothing:antialiased}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
+
+/* Capitals: every display, heading and label style is set in capitals */
+.display-xl,.display-lg,.display-md,.heading-lg,.heading-md,.heading-sm,.eyebrow,.button{text-transform:uppercase}
+.rok-muted{color:var(--ink-muted)}
+.rok-subtle{color:var(--ink-subtle)}
+.rok-mono{font-family:var(--font-mono)}
+
+/* Button */
+.rok-btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--space-2);min-height:48px;padding:0 var(--space-6);border:1px solid var(--ink);border-radius:var(--radius-none);background:transparent;color:var(--ink);font-family:var(--font-sans);cursor:pointer;text-decoration:none;transition:background-color .2s ease,color .2s ease,border-color .2s ease}
+.rok-btn:hover{background:var(--ink);color:var(--surface-100)}
+.rok-btn--solid{background:var(--ink);color:var(--surface-100)}
+.rok-btn--solid:hover{background:transparent;color:var(--ink)}
+.rok-btn--quiet{border-color:transparent;padding:0 var(--space-2)}
+.rok-btn--quiet:hover{background:transparent;color:var(--accent)}
+.rok-btn--sm{min-height:36px;padding:0 var(--space-4)}
+.rok-btn[disabled]{cursor:not-allowed;color:var(--ink-subtle);border-color:var(--line-strong);background:transparent}
+.rok-btn[disabled]:hover{background:transparent;color:var(--ink-subtle)}
+.rok-btn svg{width:14px;height:14px}
+
+/* NavBar */
+.rok-nav{display:flex;align-items:center;justify-content:space-between;gap:var(--space-6);padding:var(--space-4) var(--space-6);background:var(--surface-100);border-bottom:1px solid var(--line)}
+.rok-nav__mark{font-weight:700;font-size:20px;letter-spacing:.32em;text-transform:uppercase;color:var(--ink);text-decoration:none}
+.rok-nav__links{display:flex;gap:var(--space-6);list-style:none;margin:0;padding:0}
+.rok-nav__link{color:var(--ink-muted);text-decoration:none;padding:var(--space-2) 0;border-bottom:1px solid transparent}
+.rok-nav__link:hover{color:var(--ink)}
+.rok-nav__link[aria-current="page"]{color:var(--ink);border-bottom-color:var(--ink)}
+
+/* Hero */
+.rok-hero{position:relative;display:flex;flex-direction:column;justify-content:flex-end;min-height:480px;padding:var(--space-10) var(--space-6) var(--space-8);background:var(--surface-100);overflow:hidden}
+.rok-hero__grid{position:absolute;inset:0;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:64px 64px;opacity:.45;pointer-events:none}
+.rok-hero__body{position:relative;max-width:880px}
+.rok-hero__eyebrow{color:var(--ink-subtle);margin:0 0 var(--space-4)}
+.rok-hero__title{margin:0 0 var(--space-5);font-weight:700}
+.rok-hero__text{margin:0 0 var(--space-6);max-width:560px;color:var(--ink-muted)}
+.rok-hero__actions{display:flex;flex-wrap:wrap;gap:var(--space-4)}
+
+/* Panel */
+.rok-panel{background:var(--surface-200);border:1px solid var(--line);border-radius:var(--radius-none);padding:var(--space-5)}
+.rok-panel__eyebrow{color:var(--ink-subtle);margin:0 0 var(--space-2)}
+.rok-panel__title{margin:0 0 var(--space-4);color:var(--ink)}
+
+/* Stat */
+.rok-stat{display:flex;flex-direction:column;gap:var(--space-2)}
+.rok-stat__label{color:var(--ink-subtle);margin:0}
+.rok-stat__row{display:flex;align-items:baseline;gap:var(--space-2)}
+.rok-stat__value{font-family:var(--font-mono);color:var(--ink)}
+.rok-stat__unit{font-family:var(--font-mono);color:var(--ink-muted)}
+.rok-stat__meta{display:flex;align-items:center;gap:var(--space-3);color:var(--ink-muted)}
+
+/* StatusBadge */
+.rok-badge{display:inline-flex;align-items:center;gap:var(--space-2);padding:2px var(--space-2);border:1px solid currentColor;border-radius:var(--radius-sm)}
+.rok-badge svg{width:10px;height:10px;flex:none}
+.rok-badge--nominal{color:var(--status-nominal)}
+.rok-badge--caution{color:var(--status-caution)}
+.rok-badge--critical{color:var(--status-critical)}
+
+/* Field */
+.rok-field{display:flex;flex-direction:column;gap:var(--space-2);min-width:240px}
+.rok-field__label{color:var(--ink-subtle)}
+.rok-field__input{min-height:48px;padding:0 var(--space-4);background:var(--surface-300);color:var(--ink);border:1px solid var(--line-strong);border-radius:var(--radius-sm);font-family:var(--font-sans);font-size:15px}
+.rok-field__input.rok-mono{font-family:var(--font-mono)}
+.rok-field__input::placeholder{color:var(--ink-subtle)}
+.rok-field__input:focus{border-color:var(--accent)}
+.rok-field__hint{color:var(--ink-subtle);margin:0}
+.rok-field--error .rok-field__input{border-color:var(--status-critical)}
+.rok-field--error .rok-field__hint{color:var(--status-critical)}
+
+/* Tabs */
+.rok-tabs{display:flex;gap:var(--space-6);border-bottom:1px solid var(--line)}
+.rok-tab{background:none;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;padding:var(--space-3) 0;color:var(--ink-muted);font-family:var(--font-sans);cursor:pointer}
+.rok-tab:hover{color:var(--ink)}
+.rok-tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink)}
+
+/* DataTable */
+.rok-table{width:100%;border-collapse:collapse;background:var(--surface-100)}
+.rok-table th{text-align:left;padding:var(--space-3) var(--space-4);background:var(--surface-200);color:var(--ink-subtle);border-bottom:1px solid var(--line-strong);font-weight:600}
+.rok-table td{padding:var(--space-3) var(--space-4);border-bottom:1px solid var(--line);color:var(--ink-muted);font-size:13px;line-height:20px;letter-spacing:.02em}
+.rok-table td.rok-num{font-family:var(--font-mono);color:var(--ink);text-align:right}
+.rok-table th.rok-num{text-align:right}
+.rok-table tbody tr:hover td{background:var(--surface-300)}
+
+/* ProgressBar */
+.rok-progress{display:flex;flex-direction:column;gap:var(--space-2)}
+.rok-progress__head{display:flex;justify-content:space-between;align-items:baseline}
+.rok-progress__label{color:var(--ink-subtle)}
+.rok-progress__value{font-family:var(--font-mono);color:var(--ink)}
+.rok-progress__track{height:8px;background:var(--surface-300);border:1px solid var(--line)}
+.rok-progress__fill{height:100%;background:var(--accent)}
+.rok-progress--caution .rok-progress__fill{background:var(--status-caution)}
+.rok-progress--critical .rok-progress__fill{background:var(--status-critical)}
+
+/* PlacementMap */
+.rok-map{display:inline-flex;flex-direction:column;gap:var(--space-3)}
+.rok-map svg{display:block;background:var(--surface-300);border:1px solid var(--line)}
+.rok-map__slot{fill:none;stroke:var(--line);stroke-width:1}
+.rok-map__chip{stroke:none;cursor:pointer}
+.rok-map__chip--selected{stroke:var(--ink);stroke-width:2}
+.rok-map__label{fill:var(--ink-muted);font-family:var(--font-mono);font-size:11px;text-anchor:middle}
+.rok-map__legend{display:flex;align-items:center;gap:var(--space-2);color:var(--ink-subtle)}
+.rok-map__swatch{width:16px;height:16px;display:inline-block}
+.rok-heat-1{fill:var(--thermal-1);background:var(--thermal-1)}
+.rok-heat-2{fill:var(--thermal-2);background:var(--thermal-2)}
+.rok-heat-3{fill:var(--thermal-3);background:var(--thermal-3)}
+.rok-heat-4{fill:var(--thermal-4);background:var(--thermal-4)}
+.rok-heat-5{fill:var(--thermal-5);background:var(--thermal-5)}

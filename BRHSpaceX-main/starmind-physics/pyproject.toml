@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "starmind-physics"
+version = "0.1.0"
+description = "Hackathon physics core: LEO orbit lifetime vs power for Starmind-class compute satellites"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Starmind hackathon" }]
+dependencies = [
+  "numpy>=1.26",
+  "astropy>=6.0",
+  "pyyaml>=6.0",
+  "aep8>=0.1.0",
+  "pymoo>=0.6.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+starmind-optimize = "starmind_physics.scripts.optimize:main"
+starmind-saa-grid = "starmind_physics.scripts.saa_grid:main"
+starmind-chips = "starmind_physics.scripts.chips_db:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["starmind_physics*"]
+
+[tool.setuptools.package-data]
+starmind_physics = ["params.yaml", "data/*.yaml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+  "aep8: tests that call the aep8 radiation belt model",
+]

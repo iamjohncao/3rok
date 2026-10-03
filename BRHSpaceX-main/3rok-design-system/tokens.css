@@ -1,0 +1,81 @@
+/* 3rok design tokens. Dark theme is default; add data-theme="light" to <html> for the report theme. */
+@font-face{font-family:"Barlow";src:url(./fonts/barlow-latin-400-normal.woff2) format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"Barlow";src:url(./fonts/barlow-latin-500-normal.woff2) format("woff2");font-weight:500;font-style:normal;font-display:swap}
+@font-face{font-family:"Barlow";src:url(./fonts/barlow-latin-600-normal.woff2) format("woff2");font-weight:600;font-style:normal;font-display:swap}
+@font-face{font-family:"Barlow";src:url(./fonts/barlow-latin-700-normal.woff2) format("woff2");font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:"IBM Plex Mono";src:url(./fonts/ibm-plex-mono-latin-400-normal.woff2) format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"IBM Plex Mono";src:url(./fonts/ibm-plex-mono-latin-500-normal.woff2) format("woff2");font-weight:500;font-style:normal;font-display:swap}
+:root, [data-theme="dark"]{
+  --surface-100: #000000;
+  --surface-200: #0b0c0d;
+  --surface-300: #17191b;
+  --ink: #ffffff;
+  --ink-muted: #b8bcc1;
+  --ink-subtle: #8d9298;
+  --line: #2c2f33;
+  --line-strong: #8d9298;
+  --accent: #4ec1f5;
+  --on-accent: #000000;
+  --focus-ring: var(--accent);
+  --status-nominal: var(--accent);
+  --status-caution: #f5b700;
+  --status-critical: #ff6a45;
+  --thermal-1: #3a86c4;
+  --thermal-2: #7fc8ee;
+  --thermal-3: #d9dde1;
+  --thermal-4: #f5b700;
+  --thermal-5: #ff6a45;
+  --shadow-overlay: 0 16px 48px rgba(0,0,0,0.6);
+}
+[data-theme="light"]{
+  --surface-100: #ffffff;
+  --surface-200: #f3f4f5;
+  --surface-300: #e4e6e8;
+  --ink: #000000;
+  --ink-muted: #3b3f44;
+  --ink-subtle: #565b61;
+  --line: #cfd2d5;
+  --line-strong: #565b61;
+  --accent: #005a8c;
+  --on-accent: #ffffff;
+  --focus-ring: var(--accent);
+  --status-nominal: var(--accent);
+  --status-caution: #7a5200;
+  --status-critical: #b0300f;
+  --thermal-1: #1d5e94;
+  --thermal-2: #2f7fb0;
+  --thermal-3: #6b7076;
+  --thermal-4: #a86d00;
+  --thermal-5: #b0300f;
+}
+:root{
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+  --space-10: 128px;
+  --radius-none: 0;
+  --radius-sm: 2px;
+  --radius-full: 9999px;
+  --font-sans: "Barlow", "D-DIN", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+.display-xl{font-family:var(--font-sans);font-size:80px;line-height:80px;font-weight:700;letter-spacing:0.04em}
+.display-lg{font-family:var(--font-sans);font-size:56px;line-height:60px;font-weight:700;letter-spacing:0.05em}
+.display-md{font-family:var(--font-sans);font-size:40px;line-height:44px;font-weight:600;letter-spacing:0.06em}
+.heading-lg{font-family:var(--font-sans);font-size:28px;line-height:34px;font-weight:600;letter-spacing:0.08em}
+.heading-md{font-family:var(--font-sans);font-size:20px;line-height:28px;font-weight:600;letter-spacing:0.1em}
+.heading-sm{font-family:var(--font-sans);font-size:16px;line-height:24px;font-weight:600;letter-spacing:0.12em}
+.body-lg{font-family:var(--font-sans);font-size:18px;line-height:28px;font-weight:400;letter-spacing:0.01em}
+.body{font-family:var(--font-sans);font-size:15px;line-height:24px;font-weight:400;letter-spacing:0.01em}
+.body-sm{font-family:var(--font-sans);font-size:13px;line-height:20px;font-weight:400;letter-spacing:0.02em}
+.eyebrow{font-family:var(--font-sans);font-size:12px;line-height:16px;font-weight:600;letter-spacing:0.22em}
+.button{font-family:var(--font-sans);font-size:12px;line-height:16px;font-weight:600;letter-spacing:0.2em}
+.data-xl{font-family:var(--font-mono);font-size:48px;line-height:48px;font-weight:500;letter-spacing:-0.01em}
+.data-md{font-family:var(--font-mono);font-size:20px;line-height:28px;font-weight:500;letter-spacing:0}
+.data-sm{font-family:var(--font-mono);font-size:12px;line-height:16px;font-weight:400;letter-spacing:0.04em}
