@@ -84,7 +84,7 @@ At the scrubbed epoch the page shows the state, then the readings derived from i
 
 Derived readings, each labeled as derived from the OEM:
 
-- Geodetic altitude, latitude, and longitude. Rotate the GCRF state to Earth-fixed for the view, then convert with WGS84. The rotation uses Earth rotation angle from the UTC epoch and labels the approximation UT1 ≈ UTC.
+- Geodetic altitude, latitude, and longitude. Rotate the GCRF state to Earth-fixed for the view, then convert with WGS84. The rotation uses Earth rotation angle from the UTC epoch, plus the mean precession of the equator, and labels the approximation UT1 ≈ UTC. It leaves out nutation and polar motion. Against Vallado's published GCRF-to-ITRF example (2004) it agrees to 0.14 km. Earth rotation angle alone, without the precession term, was 3.5 km off there and is off by up to about 17 km at LEO in 2026, because it ignores the tilt of the pole. The page labels these readings derived and approximate.
 - Inertial speed, the magnitude of the velocity, in km/s.
 - Flight-path angle, the angle between the velocity and the local horizontal: the complement of the angle between position and velocity.
 - Specific mechanical energy, \(v^2/2 - \mu/r\), with \(\mu = 398600.4418\,\mathrm{km}^3/\mathrm{s}^2\) (WGS84) and \(r\) the magnitude of the GCRF position. Report it in km²/s².
