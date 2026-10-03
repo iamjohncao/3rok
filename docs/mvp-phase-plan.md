@@ -43,7 +43,7 @@ Merge Phase 0 first. After `lib/case.ts` is on `main`, change a field only in a 
 | Shell | Phase 0 files, design-system import, copied Cursor rule | Physics formulas, Cesium imagery keys in source |
 | OEM | `lib/oem.ts`, `lib/oem.test.ts` | React, Cesium, Grok |
 | Cases | `/cases`, `/cases/[id]`, the four regions | The Grok HTTP call, Cesium |
-| Accounts | `/account`, session, `lib/account.ts`, `lib/case-store.ts` server implementation | Parsing OEM, drawing the globe |
+| Accounts | `/account`, the Supabase Auth session, `lib/account.ts`, `lib/supabase/`, `lib/case-store.ts` server implementation, `supabase/migrations/` | Parsing OEM, drawing the globe, custom password or session code |
 | Ingest | `lib/ingest.ts`, upload mapping onto the nine types | A tenth record type, the globe |
 | Physics | `flight-mcp/` and the call into `starmind_physics.evaluate` | A new lifetime formula, moving `starmind-physics/` |
 | Holdout | `lib/holdout.ts`, `lib/oem-reduce.ts` | Calling Grok, drawing the path |
@@ -59,7 +59,7 @@ Phase 0  shell + lib/case.ts
     │
     ├── OEM library
     ├── Cases screen (IndexedDB draft)
-    ├── Accounts (server store)
+    ├── Accounts (Supabase Auth + server store)
     ├── Physics service (flight-mcp)
     └── Globe + fit, on a fixture OEM
             │
@@ -86,7 +86,7 @@ OEM, the cases screen, accounts, the physics service, and the globe do not wait 
 
 ## UI
 
-Copy `3rok-design-system/.cursor/rules/3rok-design-system.mdc` to `.cursor/rules/`. Do not edit the copy inside `3rok-design-system/`. Import once in `app/layout.tsx`:
+Copy `3rok-design-system/.cursor/rules/3rok-design-system.mdc` to `.cursor/rules/`. Do not edit the copy inside `3rok-design-system/`. That file was not in the repository upload, so `.cursor/rules/3rok-design-system.mdc` is a substitute written from the design system itself. If the original turns up, replace the substitute with a copy of it. Import once in `app/layout.tsx`:
 
 ```tsx
 import "../3rok-design-system/tokens.css";
@@ -172,7 +172,7 @@ export type CaseDocument = {
 
 Do not add a dose field that varies outside record 6 and record 8, a dollar field, a team id, or a tenth `record_type`. Provenance fields sit on every record. A row with `record_type: "provenance"` is only for a source document that is itself a record.
 
-`lib/case-store.ts` exports this interface. Callers do not talk to IndexedDB or Postgres directly.
+`lib/case-store.ts` exports this interface. Callers do not talk to IndexedDB or Supabase directly.
 
 ```ts
 export interface CaseStore {
@@ -270,15 +270,25 @@ Fixture OEM, checked into `fixtures/minimal.oem`, is the shape example in the pr
 
 **What is being built.** Sign-in, and a saved case that belongs to one person. The spec's "one person, many cases" survives a different browser. The Grok route can load the case without trusting the browser to omit holdout rows.
 
-**Owns.** `app/account/page.tsx`, `app/api/account/route.ts`, `app/api/cases/route.ts`, `app/api/cases/[id]/route.ts`, `lib/account.ts`, and the server `CaseStore`. Postgres via `DATABASE_URL`. Two tables: `account (id, email, password_hash, created_at)` and `case_doc (id, account_id, document jsonb, updated_at)`. Session cookie `3rok_session`, httpOnly, signed with `SESSION_SECRET`. Passwords stored only as a hash (scrypt or argon2).
+**Decision, 2026-10-03.** Accounts use Supabase Auth. This replaces the earlier plan for our own `account` table, scrypt or argon2 hashing, and a `3rok_session` cookie. Supabase owns users, credentials, and sessions, so 3rok has no password code to get wrong. `CaseDocument.accountId` is unchanged: it holds the Supabase user id.
 
-**Done.** Create account, sign in, sign out. `/cases` lists only that account's cases. Account A cannot read or save account B's case (the test uses two accounts). The server store is the saved document. IndexedDB from Phase 2 remains the cache for the unsaved working copy, so a keystroke does not round-trip. `accountId` on a saved case is the signed-in account. A saved case with `accountId: null` is rejected.
+**Owns.** `app/account/page.tsx`, `lib/account.ts`, `lib/supabase/` (browser client, server client, and the session-refresh helper from `@supabase/ssr`), the session-refresh proxy (`proxy.ts`, which is Next 16's name for middleware), `app/api/cases/route.ts`, `app/api/cases/[id]/route.ts`, the server `CaseStore`, and `supabase/migrations/`.
 
-**Out.** Teams, roles, sharing a case, OAuth, and any UI that merges two cases into one algorithm.
+- Sign-in is email and password through Supabase Auth. The session lives in Supabase's httpOnly cookies. There is no `app/api/account/route.ts` and no `3rok_session`.
+- One table: `case_doc (id uuid primary key, account_id uuid not null references auth.users (id) on delete cascade, document jsonb not null, updated_at timestamptz not null default now())`. There is no `account` table and no password column.
+- Row-level security is on for `case_doc`. The policy for select, insert, update, and delete is `account_id = auth.uid()`.
+- The case routes use the signed-in person's session client (the publishable key plus the session cookie). They never use the service-role key, so the database policy is a second lock beneath the route's own check.
+- The migration is a SQL file in the repo. The person who owns the Supabase project applies it with the SQL editor or the Supabase CLI.
+
+**Done.** Create account, sign in, sign out through Supabase Auth. `/cases` lists only that account's cases. Account A cannot read or save account B's case. The test uses two accounts and checks the route and the policy: a direct query as A for B's id returns no row. The server store is the saved document. IndexedDB from Phase 2 remains the cache for the unsaved working copy, so a keystroke does not round-trip. `accountId` on a saved case is the signed-in user's id. A saved case with `accountId: null`, or with any other id, is rejected.
+
+**Out.** Teams, roles, sharing a case, OAuth providers, magic links, any custom password hashing or session code, and any UI that merges two cases into one algorithm.
 
 **Parallel.** The account routes can be built against the Phase 0 type before the case screen is pretty. The case screen is not done for the MVP until it reads and writes the server store.
 
-**Secrets, added because this phase needs them.** `DATABASE_URL` and `SESSION_SECRET`, beside `XAI_API_KEY`. `NEXT_PUBLIC_CESIUM_ION_TOKEN` is a browser imagery token, not a secret.
+**Dashboard settings, not code.** In the Supabase project: Auth site URL `https://3rok.vercel.app`, redirect URLs for the production domain and for Vercel preview deployments, and whether email confirmation is on.
+
+**Secrets, added because this phase needs them.** `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (the legacy anon key also works), set in Vercel and never committed with values. Both are browser-safe by design, because row-level security protects the data. `XAI_API_KEY` stays server only. There is no `DATABASE_URL` or `SESSION_SECRET`, and the service-role key is not added to Vercel. `NEXT_PUBLIC_CESIUM_ION_TOKEN` is a browser imagery token, not a secret.
 
 ### Gates
 
@@ -286,11 +296,11 @@ Fixture OEM, checked into `fixtures/minimal.oem`, is the shape example in the pr
 
 **The data is visible.** After sign-in, the person's cases and their scored or unscored state are on `/cases`. **Not done if** cases exist only in an admin table the person cannot open.
 
-**Edits are logged.** Switching accounts does not rewrite another account's log. **Not done if** a save from account A changes account B's document.
+**Edits are logged.** Switching accounts does not rewrite another account's log. **Not done if** a save from account A changes account B's document, or row-level security is off on `case_doc`.
 
 **The exported file is the artifact.** The server stores the case document, including both OEM strings. It does not store a private flight format. **Not done if** the database has a trajectory column that is not the OEM text.
 
-**Grok reads. The evaluator keeps.** The account API does not call xAI. **Not done if** sign-in triggers a model call or a training job.
+**Grok reads. The evaluator keeps.** The account code and the case routes do not call xAI. **Not done if** sign-in triggers a model call or a training job.
 
 ---
 
