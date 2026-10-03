@@ -151,6 +151,21 @@ describe("describeEdit", () => {
     );
   });
 
+  it("does not count a final newline as a line", () => {
+    expect(describeEdit("", "a\nb\n")).toBe(
+      "Hand edit to the working copy: 0 lines removed, 2 lines added, from line 1.\n+ a\n+ b",
+    );
+    expect(describeEdit("a\nb\n", "a\nb\nc\n")).toBe(
+      "Hand edit to the working copy: 0 lines removed, 1 line added, from line 3.\n+ c",
+    );
+  });
+
+  it("says so when only the final newline changed", () => {
+    expect(describeEdit("a\nb", "a\nb\n")).toBe(
+      "Hand edit to the working copy: only the final newline changed.",
+    );
+  });
+
   it("caps the changed lines it records", () => {
     const many = Array.from({ length: 50 }, (_, i) => `row ${i}`).join("\n");
     const text = describeEdit("", many);

@@ -41,10 +41,22 @@ function lineCount(n: number): string {
   return `${n} line${n === 1 ? "" : "s"}`;
 }
 
+// A file's final newline ends its last line. It does not start another one.
+function toLines(text: string): string[] {
+  if (text === "") return [];
+  const lines = text.split("\n");
+  if (lines[lines.length - 1] === "") lines.pop();
+  return lines;
+}
+
 /** The text that changed, as the log records it: what left, what arrived, and where. */
 export function describeEdit(before: string, after: string): string {
-  const oldLines = before === "" ? [] : before.split("\n");
-  const newLines = after === "" ? [] : after.split("\n");
+  const oldLines = toLines(before);
+  const newLines = toLines(after);
+
+  if (oldLines.length === newLines.length && oldLines.every((line, i) => line === newLines[i])) {
+    return "Hand edit to the working copy: only the final newline changed.";
+  }
 
   let start = 0;
   while (start < oldLines.length && start < newLines.length && oldLines[start] === newLines[start]) {

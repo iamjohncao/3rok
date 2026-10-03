@@ -1,0 +1,183 @@
+"use client";
+
+import Link from "next/link";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { CaseDocument } from "../lib/case";
+import { CASE_NAME_MAX_LENGTH, applyHandEdit, renameCase } from "../lib/case-ops";
+import { LOCAL_ACCOUNT_ID, getCaseStore } from "../lib/case-store";
+import { ActivityRegion } from "./case/ActivityRegion";
+import { AlgorithmRegion } from "./case/AlgorithmRegion";
+import { DataRegion } from "./case/DataRegion";
+import { ScoreRegion } from "./case/ScoreRegion";
+import { Button } from "./ui/Button";
+import { Field } from "./ui/Field";
+
+type LoadState =
+  | { status: "loading" }
+  | { status: "missing" }
+  | { status: "error"; message: string }
+  | { status: "ready"; doc: CaseDocument };
+
+function messageOf(error: unknown): string {
+  return error instanceof Error ? error.message : "Something went wrong.";
+}
+
+function CaseHeader({ doc, onRename }: { doc: CaseDocument; onRename: (name: string) => Promise<void> }) {
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(doc.name);
+
+  return (
+    <header className="page-head">
+      <div>
+        <p className="page-head__eyebrow eyebrow">Case</p>
+        {editing ? (
+          <form
+            className="rename-form"
+            onSubmit={async (event) => {
+              event.preventDefault();
+              await onRename(name);
+              setEditing(false);
+            }}
+          >
+            <Field
+              label="Case name"
+              value={name}
+              maxLength={CASE_NAME_MAX_LENGTH}
+              onChange={(event) => setName(event.target.value)}
+              autoFocus
+            />
+            <Button type="submit" size="sm" disabled={name.trim() === ""}>
+              Save name
+            </Button>
+            <Button
+              variant="quiet"
+              size="sm"
+              onClick={() => {
+                setName(doc.name);
+                setEditing(false);
+              }}
+            >
+              Cancel
+            </Button>
+          </form>
+        ) : (
+          <>
+            <h1 className="page-head__title heading-lg">{doc.name}</h1>
+            <p className="page-head__meta data-sm">{doc.id}</p>
+            <Button
+              variant="quiet"
+              size="sm"
+              onClick={() => {
+                setName(doc.name);
+                setEditing(true);
+              }}
+            >
+              Rename
+            </Button>
+          </>
+        )}
+      </div>
+      {/* Wired to the Grok route in Phase 7. */}
+      <Button variant="solid" disabled title="Ask Grok opens when the Grok route is connected.">
+        Ask Grok
+      </Button>
+    </header>
+  );
+}
+
+// One case: Data, Activity, Algorithm, Score. Cases are saved in this browser until accounts arrive.
+export function CaseScreen({ id }: { id: string }) {
+  const [state, setState] = useState<LoadState>({ status: "loading" });
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const latest = useRef<CaseDocument | null>(null);
+  const queue = useRef<Promise<void>>(Promise.resolve());
+
+  useEffect(() => {
+    let live = true;
+    (async () => {
+      try {
+        const doc = await getCaseStore().get(LOCAL_ACCOUNT_ID, id);
+        if (!live) return;
+        latest.current = doc;
+        setState(doc ? { status: "ready", doc } : { status: "missing" });
+      } catch (error) {
+        if (live) setState({ status: "error", message: messageOf(error) });
+      }
+    })();
+    return () => {
+      live = false;
+    };
+  }, [id]);
+
+  // Saves run one at a time, each starting from the last saved document, so a
+  // rename and a hand edit can never overwrite each other.
+  const update = useCallback((change: (doc: CaseDocument) => CaseDocument) => {
+    queue.current = queue.current.then(async () => {
+      const current = latest.current;
+      if (!current) return;
+      const next = change(current);
+      if (next === current) return;
+      try {
+        await getCaseStore().save(LOCAL_ACCOUNT_ID, next);
+        latest.current = next;
+        setState({ status: "ready", doc: next });
+        setSaveError(null);
+      } catch (error) {
+        setSaveError(messageOf(error));
+      }
+    });
+    return queue.current;
+  }, []);
+
+  if (state.status === "loading") {
+    return (
+      <section className="frame frame--empty" role="status">
+        <p className="body rok-muted">Loading case.</p>
+      </section>
+    );
+  }
+  if (state.status === "missing") {
+    return (
+      <section className="frame frame--empty">
+        <div>
+          <p className="body rok-muted">This case is not saved in this browser.</p>
+          <Link className="rok-btn button" href="/cases">
+            Back to cases
+          </Link>
+        </div>
+      </section>
+    );
+  }
+  if (state.status === "error") {
+    return (
+      <section className="frame frame--empty" role="alert">
+        <p className="body">{state.message}</p>
+      </section>
+    );
+  }
+
+  const { doc } = state;
+  return (
+    <>
+      <CaseHeader
+        key={doc.id}
+        doc={doc}
+        onRename={(name) => update((current) => renameCase(current, name, new Date().toISOString()))}
+      />
+      {saveError ? (
+        <p className="save-error body-sm" role="alert">
+          Could not save this case: {saveError}
+        </p>
+      ) : null}
+      <div className="case-grid">
+        <DataRegion doc={doc} />
+        <AlgorithmRegion
+          doc={doc}
+          onHandEdit={(text) => update((current) => applyHandEdit(current, text, new Date().toISOString()))}
+        />
+        <ActivityRegion doc={doc} />
+        <ScoreRegion doc={doc} />
+      </div>
+    </>
+  );
+}
