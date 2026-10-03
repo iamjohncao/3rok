@@ -1,0 +1,161 @@
+/* App layout. Design tokens only: no hex or functional colors. */
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.app-main {
+  flex: 1;
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: var(--space-6);
+}
+
+.page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-5);
+  margin-bottom: var(--space-6);
+}
+
+.page-head__eyebrow {
+  margin: 0 0 var(--space-2);
+  color: var(--ink-subtle);
+}
+
+.page-head__title {
+  margin: 0;
+}
+
+.page-head__meta {
+  margin: var(--space-2) 0 0;
+  color: var(--ink-subtle);
+}
+
+/* An instrument frame: an empty, bordered area on the base surface. */
+.frame {
+  background: var(--surface-100);
+  border: 1px solid var(--line);
+}
+
+.frame--empty {
+  display: grid;
+  place-items: center;
+  min-height: 240px;
+  padding: var(--space-6);
+  text-align: center;
+}
+
+/* /cases/[id]: Data, Activity, Algorithm, Score */
+.case-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.case-grid > .rok-panel {
+  min-height: 280px;
+}
+
+.oem-stack {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.oem-block__label {
+  margin: 0 0 var(--space-2);
+  color: var(--ink-subtle);
+}
+
+.oem-box {
+  display: block;
+  width: 100%;
+  min-height: 120px;
+  margin: 0;
+  padding: var(--space-3);
+  background: var(--surface-300);
+  color: var(--ink-muted);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  overflow: auto;
+  resize: vertical;
+  white-space: pre-wrap;
+}
+
+/* /test: the globe is most of the viewport, specs sit beside it. */
+.test-layout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: var(--space-4);
+  padding: var(--space-4);
+}
+
+.globe-frame {
+  min-height: 0;
+}
+
+.specs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* /account */
+.account-main {
+  max-width: 560px;
+  margin: 0;
+}
+
+.account-form {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.account-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+@media (max-width: 900px) {
+  .rok-nav {
+    padding: var(--space-4);
+    gap: var(--space-4);
+  }
+
+  .rok-nav__links {
+    gap: var(--space-4);
+  }
+
+  .app-main {
+    padding: var(--space-4);
+  }
+
+  .case-grid,
+  .test-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .globe-frame {
+    min-height: 60dvh;
+  }
+}

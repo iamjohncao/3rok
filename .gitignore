@@ -1,0 +1,30 @@
+# Node / Next.js
+node_modules/
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+npm-debug.log*
+
+# Cesium assets are copied into public/cesium at build time (Phase 8)
+public/cesium/
+
+# Environment. .env.example is the only env file that is committed.
+.env
+.env.*
+!.env.example
+
+# Vercel
+.vercel/
+
+# Python (starmind-physics, flight-mcp)
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/

@@ -1,0 +1,78 @@
+---
+description: 3rok design system. Tokens, type, buttons, and component rules for every UI file.
+globs: ["app/**/*.tsx", "app/**/*.css", "components/**/*.tsx"]
+alwaysApply: false
+---
+
+# 3rok design system
+
+> This is a substitute rule file. The original,
+> `3rok-design-system/.cursor/rules/3rok-design-system.mdc`, was not in the
+> repository, so this one was written from `3rok-design-system/` itself
+> (`README.md`, `tokens.css`, `components/bundle.css`, `components/bundle.js`,
+> `components/index.d.ts`) and the UI section of `docs/mvp-phase-plan.md`.
+> If the original turns up, replace this file with a copy of it. Never edit
+> anything inside `3rok-design-system/`.
+
+## Setup
+
+- Import once, in `app/layout.tsx` only:
+  `import "../3rok-design-system/tokens.css";` then
+  `import "../3rok-design-system/components/bundle.css";`
+- The app is dark. `<html data-theme="dark">`. The light theme
+  (`data-theme="light"`) is only for exported, printable reports.
+- Do not load `components/bundle.js` and do not use `window.Rok`. Re-implement
+  a component you need as a local `.tsx` in `components/ui/` that reuses the
+  `rok-*` classes from `bundle.css`. `components/index.d.ts` documents the props.
+
+## Color
+
+- Use CSS variables only: `--surface-100/200/300`, `--ink`, `--ink-muted`,
+  `--ink-subtle`, `--line`, `--line-strong`, `--accent`, `--on-accent`,
+  `--status-nominal/caution/critical`, `--thermal-1` to `--thermal-5`.
+- No hex, `rgb()` or `hsl()` in app code. `tests/design-gates.test.ts` fails on them.
+- Status is shape plus word, never color alone (see `StatusBadge`: circle, triangle, square).
+- Thermal ramp (`--thermal-*`) is for the placement map only.
+
+## Type
+
+- Barlow for words. IBM Plex Mono for every measured value.
+- Display, heading, eyebrow and button styles are set in capitals by the CSS.
+  Do not type them in capitals by hand, except the wordmark `3ROK`.
+- Classes: `display-xl|lg|md`, `heading-lg|md|sm`, `body-lg|body|body-sm`,
+  `eyebrow`, `button`, and the measured-value sizes `data-xl`, `data-md`,
+  `data-sm`.
+- Write the product name `3rok` in prose and `3ROK` in display type.
+
+## Space and shape
+
+- Spacing: `--space-1` to `--space-10` (4 px to 128 px). No other pixel gaps.
+- Corners are square (`--radius-none`). `--radius-sm` (2 px) only on fields and badges.
+- Borders are 1 px `--line`; stronger edges use `--line-strong`.
+- Focus is the 2 px `--focus-ring` outline from `bundle.css`. Do not remove it.
+
+## Buttons
+
+- One `solid` button per screen. Everything else is `ghost` or `quiet`.
+- Disabled buttons use the `disabled` attribute so `bundle.css` styles them.
+- Per screen, the solid button is: `/account` `Sign in` (the create form uses
+  `Create account`), `/cases` `Create case`, `/cases/[id]` `Ask Grok`,
+  `/test` `Import case` until a file is loaded, then `Play path`.
+
+## Components
+
+Allowed: Button, NavBar, Panel, Stat, StatusBadge, Field, Tabs, DataTable.
+
+- Not `Hero`. The home screen is not a marketing page.
+- Not `ProgressBar` as a loss curve or as the Score region.
+- `PlacementMap` only for record 7, the chip's place in the vehicle. Cell color
+  there is that record's thermal coupling, with its `value_status` on the cell.
+- Do not copy the design-system example labels `Run prediction`, `YR` or `KRAD`.
+  Show lifetime or dose only when a record or `evaluate` returned it, with the
+  unit from that source and the word `estimated` or the record's `value_status`.
+
+## Words the UI must not use
+
+- `project` for the saved container. It is a **case**.
+- A training run, loss curve, checkpoint, epoch or fine-tune job. Grok reads the
+  case. Its weights do not change.
