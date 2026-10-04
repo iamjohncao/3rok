@@ -15,6 +15,8 @@ function sourceFiles(): string[] {
   const walk = (dir: string) => {
     for (const name of readdirSync(dir)) {
       const full = join(dir, name);
+      // Test support is not app code. It stands in for services and is never imported by the app.
+      if (name === "test-support") continue;
       if (statSync(full).isDirectory()) walk(full);
       else if (SOURCE_EXT.test(name) && !/\.test\.tsx?$/.test(name)) out.push(full);
     }
@@ -92,5 +94,35 @@ describe("product language", () => {
 
   it("shows no training run, loss curve, checkpoint or fine-tune job", () => {
     expect(offenders(/loss curve|checkpoint|fine-?tun|training run/i)).toEqual([]);
+  });
+});
+
+describe("secrets and the server line (Phase 7)", () => {
+  const clientFiles = () => sourceFiles().filter((file) => /^(components|app)\//.test(relative(root, file)) && !relative(root, file).startsWith("app/api/"));
+
+  it("keeps the xAI keys and the flight token out of every page and component", () => {
+    expect(offenders(/XAI_API_KEY|XAI_MANAGEMENT_API_KEY|FLIGHT_MCP_TOKEN|FLIGHT_MCP_URL/, clientFiles())).toEqual([]);
+  });
+
+  it("never exposes a key to the browser through a NEXT_PUBLIC_ variable", () => {
+    expect(offenders(/NEXT_PUBLIC_(XAI|FLIGHT|GROK)/)).toEqual([]);
+  });
+
+  it("lets a component import server-only code for its types, and for nothing else", () => {
+    const serverOnly = /from ["'][^"']*\/(xai|xai-collections|flight-client|grok-run|grok-handler|grok-request|grok-tools|grok-limit|account\.server|case-store\.server)["']/;
+    const bad = clientFiles().filter((file) =>
+      readFileSync(file, "utf8")
+        .split("\n")
+        .some((line) => /^\s*import\b/.test(line) && !/^\s*import type\b/.test(line) && serverOnly.test(line)),
+    );
+    expect(bad.map((file) => relative(root, file))).toEqual([]);
+  });
+
+  it("calls xAI only from the library files that own it, and the route reaches them through the handler", () => {
+    expect(offenders(/api\.x\.ai|management-api\.x\.ai/).sort()).toEqual(["lib/xai.ts"]);
+  });
+
+  it("has no fine-tune, training, or model-update call anywhere", () => {
+    expect(offenders(/\/fine[-_]?tun|\/training|\/model[-_]?update/i)).toEqual([]);
   });
 });

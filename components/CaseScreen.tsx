@@ -18,6 +18,7 @@ import { useAccount } from "./AccountProvider";
 import { SignInPrompt } from "./SignInPrompt";
 import { ActivityRegion } from "./case/ActivityRegion";
 import { AlgorithmRegion } from "./case/AlgorithmRegion";
+import type { AskResult } from "./case/AskGrokForm";
 import { DataRegion } from "./case/DataRegion";
 import { ScoreRegion } from "./case/ScoreRegion";
 import { Button } from "./ui/Button";
@@ -33,7 +34,15 @@ function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : "Something went wrong.";
 }
 
-function CaseHeader({ doc, onRename }: { doc: CaseDocument; onRename: (name: string) => Promise<void> }) {
+function CaseHeader({
+  doc,
+  asking,
+  onRename,
+}: {
+  doc: CaseDocument;
+  asking: boolean;
+  onRename: (name: string) => Promise<void>;
+}) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(doc.name);
 
@@ -78,6 +87,7 @@ function CaseHeader({ doc, onRename }: { doc: CaseDocument; onRename: (name: str
             <Button
               variant="quiet"
               size="sm"
+              disabled={asking}
               onClick={() => {
                 setName(doc.name);
                 setEditing(true);
@@ -88,9 +98,9 @@ function CaseHeader({ doc, onRename }: { doc: CaseDocument; onRename: (name: str
           </>
         )}
       </div>
-      {/* Wired to the Grok route in Phase 7. */}
-      <Button variant="solid" disabled title="Ask Grok opens when the Grok route is connected.">
-        Ask Grok
+      {/* Submits the instruction form in the Activity region. The one solid button on this screen. */}
+      <Button variant="solid" type="submit" form="ask-grok-form" disabled={asking}>
+        {asking ? "Grok is reading" : "Ask Grok"}
       </Button>
     </header>
   );
@@ -102,6 +112,10 @@ export function CaseScreen({ id }: { id: string }) {
   const userId = account.status === "signed-in" ? account.userId : null;
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [asking, setAsking] = useState(false);
+  const [askError, setAskError] = useState<string | null>(null);
+  const [askResult, setAskResult] = useState<AskResult | null>(null);
+  const askingRef = useRef(false);
   const latest = useRef<CaseDocument | null>(null);
   const accountRef = useRef<string | null>(userId);
   const queue = useRef<Promise<void>>(Promise.resolve());
@@ -131,6 +145,8 @@ export function CaseScreen({ id }: { id: string }) {
   // save failed, so a caller never reports a save that did not happen.
   const update = useCallback((change: (doc: CaseDocument) => CaseDocument) => {
     const run = queue.current.then(async (): Promise<boolean> => {
+      // While Grok works the server saves the case. A save from this page then would overwrite its result.
+      if (askingRef.current) return false;
       const current = latest.current;
       const owner = accountRef.current;
       if (!current || owner === null) return false;
@@ -150,6 +166,41 @@ export function CaseScreen({ id }: { id: string }) {
     queue.current = run.then(() => undefined);
     return run;
   }, []);
+
+  // Ask Grok. The server reads the case, runs Grok and the evaluator, saves the case, and returns it.
+  // Saves still waiting go first, so the server reads what the person last wrote.
+  async function ask(instruction: string): Promise<boolean> {
+    if (askingRef.current) return false;
+    askingRef.current = true;
+    setAsking(true);
+    setAskError(null);
+    setAskResult(null);
+    try {
+      await queue.current;
+      const response = await fetch("/api/grok", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ caseId: id, instruction }),
+      });
+      const data: { case?: CaseDocument; verdict?: AskResult["verdict"]; reason?: string; error?: string } | null = await response
+        .json()
+        .catch(() => null);
+      if (!response.ok || !data?.case || !data.verdict) {
+        setAskError(data?.error ?? `Ask Grok failed (${response.status}).`);
+        return false;
+      }
+      latest.current = data.case;
+      setState({ status: "ready", doc: data.case });
+      setAskResult({ verdict: data.verdict, reason: data.reason ?? "" });
+      return true;
+    } catch {
+      setAskError("Ask Grok could not be reached. Check the connection and try again.");
+      return false;
+    } finally {
+      askingRef.current = false;
+      setAsking(false);
+    }
+  }
 
   if (account.status === "unavailable") {
     return (
@@ -192,6 +243,7 @@ export function CaseScreen({ id }: { id: string }) {
       <CaseHeader
         key={doc.id}
         doc={doc}
+        asking={asking}
         onRename={async (name) => {
           await update((current) => renameCase(current, name, new Date().toISOString()));
         }}
@@ -204,6 +256,7 @@ export function CaseScreen({ id }: { id: string }) {
       <div className="case-grid">
         <DataRegion
           doc={doc}
+          locked={asking}
           onIngest={(records: CaseRecord[], filename: string) =>
             update((current) => applyIngest(current, records, filename, new Date().toISOString()))
           }
@@ -223,11 +276,12 @@ export function CaseScreen({ id }: { id: string }) {
         />
         <AlgorithmRegion
           doc={doc}
+          locked={asking}
           onHandEdit={async (text) => {
             await update((current) => applyHandEdit(current, text, new Date().toISOString()));
           }}
         />
-        <ActivityRegion doc={doc} />
+        <ActivityRegion doc={doc} asking={asking} askError={askError} askResult={askResult} onAsk={ask} />
         <ScoreRegion doc={doc} />
       </div>
     </>

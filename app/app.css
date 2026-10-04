@@ -101,6 +101,7 @@ body {
 
 .record-groups {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-4);
 }
 
@@ -114,6 +115,7 @@ body {
 
 .record-list {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-2);
   margin: 0;
   padding: 0;
@@ -137,6 +139,7 @@ body {
 .data-upload,
 .chip-selector {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-2);
   margin: 0 0 var(--space-4);
   padding: var(--space-3) var(--space-4);
@@ -176,6 +179,7 @@ body {
 .upload-preview,
 .upload-refusal {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-2);
   padding: var(--space-3);
   border: 1px solid var(--line-strong);
@@ -188,6 +192,7 @@ body {
 
 .upload-rows {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-2);
   margin: 0;
   padding: 0;
@@ -201,8 +206,18 @@ body {
   gap: var(--space-3);
 }
 
+.ask-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2);
+  margin: 0 0 var(--space-5);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--line);
+}
+
 .log-list {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-4);
   margin: 0;
   padding: 0;
@@ -225,6 +240,7 @@ body {
 .log-entry__text {
   margin: 0 0 var(--space-2);
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
   font-family: var(--font-sans);
 }
 
@@ -243,6 +259,7 @@ body {
 
 .oem-stack {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-4);
 }
 

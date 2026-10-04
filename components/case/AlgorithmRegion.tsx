@@ -41,9 +41,12 @@ function OemCheck({ text }: { text: string }) {
 // Saving an edit changes the working copy and logs it. It never replaces the optimized file.
 export function AlgorithmRegion({
   doc,
+  locked,
   onHandEdit,
 }: {
   doc: CaseDocument;
+  /** True while Grok works: the server is saving this case, so this page does not. */
+  locked: boolean;
   onHandEdit: (text: string) => Promise<void>;
 }) {
   const saved = doc.workingOem ?? "";
@@ -134,7 +137,7 @@ export function AlgorithmRegion({
           ) : null}
           <OemCheck text={draft} />
           <div className="algorithm-actions">
-            <Button size="sm" disabled={!dirty || saving} onClick={save}>
+            <Button size="sm" disabled={!dirty || saving || locked} onClick={save}>
               Save edit
             </Button>
             <Button variant="quiet" size="sm" disabled={!dirty || saving} onClick={() => setDraft(saved)}>

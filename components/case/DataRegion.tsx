@@ -7,9 +7,11 @@ import { DataUpload } from "./DataUpload";
 // chip-identity row counts toward the family on the case list.
 function ChipSelector({
   doc,
+  locked,
   onToggleChip,
 }: {
   doc: CaseDocument;
+  locked: boolean;
   onToggleChip: (chipId: string) => void;
 }) {
   const chips = doc.records.filter((record) => record.record_type === "chip-identity");
@@ -27,6 +29,7 @@ function ChipSelector({
             <input
               type="checkbox"
               checked={doc.chipIds.includes(chipId)}
+              disabled={locked}
               onChange={() => onToggleChip(chipId)}
             />
             <span className="data-sm">{chipId}</span>
@@ -64,11 +67,14 @@ function RecordRow({ record }: { record: CaseRecord }) {
 // Holdout rows are shown like any other row. They are withheld from Grok, not from the person.
 export function DataRegion({
   doc,
+  locked,
   onIngest,
   onAttachPdf,
   onToggleChip,
 }: {
   doc: CaseDocument;
+  /** True while Grok works: the server is saving this case, so this page does not. */
+  locked: boolean;
   onIngest: (records: CaseRecord[], filename: string) => Promise<boolean>;
   onAttachPdf: (recordId: string, filename: string, bytes: ArrayBuffer) => Promise<boolean>;
   onToggleChip: (chipId: string) => void;
@@ -77,8 +83,8 @@ export function DataRegion({
 
   return (
     <Panel id="data" title="Data" eyebrow="Records by type">
-      <DataUpload doc={doc} onIngest={onIngest} onAttachPdf={onAttachPdf} />
-      <ChipSelector doc={doc} onToggleChip={onToggleChip} />
+      <DataUpload doc={doc} locked={locked} onIngest={onIngest} onAttachPdf={onAttachPdf} />
+      <ChipSelector doc={doc} locked={locked} onToggleChip={onToggleChip} />
       {doc.records.length === 0 ? <p className="body rok-muted">No records yet.</p> : null}
       <div className="record-groups">
         {groups.map((group) => (

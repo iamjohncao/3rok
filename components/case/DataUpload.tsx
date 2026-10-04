@@ -56,10 +56,12 @@ function RowList({ records }: { records: CaseRecord[] }) {
 // saved until the person confirms the preview, and a replaced row is logged by name.
 export function DataUpload({
   doc,
+  locked,
   onIngest,
   onAttachPdf,
 }: {
   doc: CaseDocument;
+  locked: boolean;
   onIngest: (records: CaseRecord[], filename: string) => Promise<boolean>;
   onAttachPdf: (recordId: string, filename: string, bytes: ArrayBuffer) => Promise<boolean>;
 }) {
@@ -157,7 +159,7 @@ export function DataUpload({
         type="file"
         className="body-sm"
         accept={ACCEPT}
-        disabled={busy}
+        disabled={busy || locked}
         onChange={(event) => {
           const file = event.target.files?.[0];
           event.target.value = "";
@@ -204,7 +206,7 @@ export function DataUpload({
             </p>
           ) : null}
           <div className="algorithm-actions">
-            <Button size="sm" disabled={busy || tooLarge} onClick={confirm}>
+            <Button size="sm" disabled={busy || locked || tooLarge} onClick={confirm}>
               {preview.replaced.length > 0
                 ? `Save and replace ${plural(preview.replaced.length, "record")}`
                 : `Save ${plural(preview.added.length, "record")}`}
@@ -241,7 +243,7 @@ export function DataUpload({
             body.
           </p>
           <div className="algorithm-actions">
-            <Button size="sm" disabled={busy || recordId === ""} onClick={confirm}>
+            <Button size="sm" disabled={busy || locked || recordId === ""} onClick={confirm}>
               Attach PDF
             </Button>
             <Button variant="quiet" size="sm" disabled={busy} onClick={reset}>

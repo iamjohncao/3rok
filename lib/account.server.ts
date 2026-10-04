@@ -7,7 +7,7 @@ import { ACCOUNTS_NOT_SET_UP, supabaseEnv } from "./supabase/env";
 import { createClient } from "./supabase/server";
 
 export type AccountResult =
-  | { ok: true; userId: string; supabase: SupabaseClient }
+  | { ok: true; userId: string; email: string | null; supabase: SupabaseClient }
   | { ok: false; response: NextResponse };
 
 const NO_STORE = { "Cache-Control": "no-store" };
@@ -26,5 +26,6 @@ export async function requireAccount(): Promise<AccountResult> {
   if (error || typeof userId !== "string") {
     return { ok: false, response: json({ error: "Sign in to use cases." }, 401) };
   }
-  return { ok: true, userId, supabase };
+  const email = data?.claims?.email;
+  return { ok: true, userId, email: typeof email === "string" ? email : null, supabase };
 }
