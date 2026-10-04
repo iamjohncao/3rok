@@ -5,7 +5,7 @@
 import type { CaseDocument } from "./case";
 import { UUID } from "./case-validate";
 import type { CaseStore } from "./case-store";
-import { PhysicsUnavailableError, scoreOrbitVia, type FlightEnv } from "./flight-client";
+import { PhysicsUnavailableError, scoreOrbitVia, wakeFlightServer, type FlightEnv } from "./flight-client";
 import { failedRevision, reviseCase, type Verdict } from "./grok-revision";
 import { GrokSetupError, checkSetup, runGrok, type GrokTrace } from "./grok-run";
 import { MAX_INSTRUCTION_CHARS } from "./grok-request";
@@ -15,9 +15,9 @@ import type { ScoreOrbit } from "./holdout";
 import { XaiError, scrub, type FetchLike, type XaiEnv } from "./xai";
 
 export const GROK_NOT_SET_UP = "Grok is not set up on this deployment. XAI_API_KEY is missing.";
-/** The whole request, Grok and scoring, ends before this. Vercel's function limit is higher. */
-export const DEFAULT_DEADLINE_MS = 270_000;
-const SCORE_DEADLINE_MS = 30_000;
+/** Grok gets this long, and scoring gets SCORE_DEADLINE_MS after it. Together they end before the route's 300 seconds. */
+export const DEFAULT_DEADLINE_MS = 200_000;
+export const SCORE_DEADLINE_MS = 80_000;
 
 export type AskDeps = {
   xai: XaiEnv | null;
@@ -29,6 +29,9 @@ export type AskDeps = {
   allowedEmails: string[];
   now?: () => Date;
   deadlineMs?: number;
+  scoreDeadlineMs?: number;
+  /** Pause before the one retry of a score. Tests shorten it. */
+  scoreRetryMs?: number;
 };
 
 export type AskResult = { status: number; body: Record<string, unknown>; headers?: Record<string, string> };
@@ -78,6 +81,9 @@ export async function handleAsk(account: { userId: string; email: string | null 
     );
   }
 
+  // A flight server that sleeps when idle wakes while Grok reads the case. Nothing waits on this.
+  if (flight) void wakeFlightServer(flight, { fetch: deps.fetch });
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), deps.deadlineMs ?? DEFAULT_DEADLINE_MS);
   let trace: GrokTrace | null = null;
@@ -104,9 +110,9 @@ export async function handleAsk(account: { userId: string; email: string | null 
       ? failedRevision({ doc: fresh, instruction, reason: failure ?? "The request to Grok failed.", now: stamp })
       : await (async () => {
           const scoring = new AbortController();
-          const scoringTimer = setTimeout(() => scoring.abort(), SCORE_DEADLINE_MS);
+          const scoringTimer = setTimeout(() => scoring.abort(), deps.scoreDeadlineMs ?? SCORE_DEADLINE_MS);
           try {
-            const scoreOrbit = flight ? scoreOrbitVia(flight, { fetch: deps.fetch, signal: scoring.signal }) : noPhysics;
+            const scoreOrbit = flight ? scoreOrbitVia(flight, { fetch: deps.fetch, signal: scoring.signal, retryAfterMs: deps.scoreRetryMs }) : noPhysics;
             return await reviseCase({ doc: fresh, instruction, trace: trace!, now: stamp, scoreOrbit });
           } finally {
             clearTimeout(scoringTimer);

@@ -1,0 +1,490 @@
+# =============================================================================
+# Starmind candidate AI-chip database
+# =============================================================================
+# Purpose: catalogue accelerators that *could* fly on a Starmind-class
+# orbital compute vehicle (SpaceX: "chip vendor agnostic"; first gen reported
+# as Nvidia Vera/Rubin-based — secondary press, Oct 2026 plan).
+#
+# Legend for every numeric radiation field:
+#   [S] = sourced (URL in sources[])
+#   [A] = modelling assumption for ranking — NOT a measured fact
+#   [?] = unknown / no public number; placeholder only
+#
+# Never treat [A] or [?] dose limits as Nvidia/SpaceX flight specs.
+# =============================================================================
+
+schema_version: 1
+updated: "2026-10-03"
+notes: >
+  Radiation hardness for almost all modern AI accelerators is unpublished.
+  Only a few rows have sourced TID/SEU anchors. Commercial GPU/TPU rows that
+  lack tests inherit the Google Trillium HBM-onset 2 krad(Si) commercial
+  analogue [A] so the physics core can rank orbits — replace when real data
+  exists. Space-grade rows use published rad-hard / rad-tolerant specs where
+  cited; those parts are typically CPUs/FPGAs, not datacenter AI dies.
+
+# Shared modelling defaults applied when a chip omits a field [A]
+defaults:
+  dose_limit_krad_Si_commercial_analogue: 2.0   # [A] from Trillium HBM onset [S]
+  dose_limit_krad_Si_unknown_slider: 2.0        # [A] starting slider for [?] parts
+  seu_R_ref_upsets_per_bit_day_commercial: 1.0e-10  # [A]
+  seu_R_ref_upsets_per_bit_day_rad_hard: 1.0e-11    # [A] order of RAD750 class [S]
+  t_recovery_s: 30.0                            # [A]
+
+categories:
+  - id: starmind_announced
+    label: Announced / reported for Starmind
+  - id: commercial_ai
+    label: Commercial AI accelerators (future candidates)
+  - id: space_rad_tolerant
+    label: Space-grade / rad-tolerant compute (not datacenter AI dies)
+  - id: edge_ai
+    label: Edge / module AI (demo-scale candidates)
+  - id: legacy_anchor
+    label: Legacy radiation anchors used for presets
+
+chips:
+  # ---------------------------------------------------------------------------
+  # Starmind-linked
+  # ---------------------------------------------------------------------------
+  - id: nvidia_vera_rubin_nvl72
+    vendor: NVIDIA
+    product: Vera Rubin NVL72 (optimized for Starmind)
+    category: starmind_announced
+    role: primary_compute
+    starmind_status: reported_first_gen
+    starmind_status_note: >
+      Secondary press (MLQ, Startup Fortune, Wikipedia Starmind page) say
+      first-gen Starmind is based on an optimized Vera Rubin NVL72. Not a
+      primary SpaceX datasheet radiation claim.
+    process_nm: null
+    memory: HBM (rack-scale NVL72; capacity not used as a fact here)
+    memory_bits: 8.0e11                    # [A] ~1 Tbit-class placeholder for SEU scaling
+    tdp_w_per_gpu: null                    # [?] unpublished for the optimized variant
+    rack_tdp_kw: null                      # [?]
+    dose_limit_krad_Si: 2.0                # [?] unknown — slider default = commercial analogue [A]
+    dose_limit_basis: unknown_use_commercial_analogue
+    dose_limit_provenance: assumed
+    seu_R_ref_upsets_per_bit_day: 1.0e-10  # [A]
+    seu_provenance: assumed
+    sources:
+      - url: https://mlq.ai/news/spacex-targets-fourth-quarter-2027-launch-for-nvidia-based-starmind-ai-satellites/
+        claim: "Starmind / Vera Rubin association (secondary)"
+        tag: S
+      - url: https://en.wikipedia.org/wiki/Starmind_(satellite)
+        claim: "Starmind overview (secondary)"
+        tag: S
+    tags: [nvidia, rubin, nvl72, starmind, hbm]
+
+  - id: nvidia_rubin_gpu_die
+    vendor: NVIDIA
+    product: Rubin GPU (single die / board-level placeholder)
+    category: starmind_announced
+    role: primary_compute
+    starmind_status: implied_building_block
+    starmind_status_note: >
+      Placeholder for a single Rubin-class GPU if SpaceX flies a non-NVL72
+      packing. Radiation tolerance unpublished [?].
+    memory_bits: 1.6e11                   # [A]
+    dose_limit_krad_Si: 2.0               # [?] → commercial analogue [A]
+    dose_limit_basis: unknown_use_commercial_analogue
+    dose_limit_provenance: assumed
+    seu_R_ref_upsets_per_bit_day: 1.0e-10 # [A]
+    seu_provenance: assumed
+    sources: []
+    tags: [nvidia, rubin, placeholder]
+
+  # ---------------------------------------------------------------------------
+  # Commercial AI — future vendor-agnostic candidates
+  # ---------------------------------------------------------------------------
+  - id: google_trillium_tpu_v6e
+    vendor: Google
+    product: Trillium (TPU v6e)
+    category: commercial_ai
+    role: primary_compute
+    starmind_status: analogue_with_rad_test
+    starmind_status_note: >
+      Not announced for Starmind. Best public commercial-AI radiation test
+      anchor (proton beam). Use for commercial preset.
+    memory: HBM
+    memory_bits: 8.0e10                   # [A] scale for SEU model
+    dose_limit_krad_Si: 2.0               # [S] HBM irregularities onset
+    dose_limit_hard_fail_krad_Si: 15.0    # [S] no TID hard fail on one chip up to this
+    expected_mission_dose_krad_Si: 0.75   # [S] Google's shielded 5-year expectation example
+    dose_limit_basis: trillium_hbm_onset_proton_beam
+    dose_limit_provenance: sourced
+    seu_R_ref_upsets_per_bit_day: 1.0e-10 # [A] rate not published as a CREME number
+    seu_provenance: assumed
+    sources:
+      - url: https://research.google/blog/exploring-a-space-based-scalable-ai-infrastructure-system-design/
+        claim: "HBM issues ~2 krad(Si); no hard fail to 15 krad(Si); ~750 rad(Si)/5 yr shielded expectation"
+        tag: S
+    tags: [google, tpu, trillium, commercial, rad_test]
+
+  - id: google_tpu_v5e
+    vendor: Google
+    product: TPU v5e
+    category: commercial_ai
+    role: primary_compute
+    starmind_status: future_candidate
+    memory_bits: 8.0e10                   # [A]
+    dose_limit_krad_Si: 2.0               # [A] inherit Trillium commercial analogue
+    dose_limit_basis: commercial_analogue_trillium
+    dose_limit_provenance: assumed
+    seu_R_ref_upsets_per_bit_day: 1.0e-10 # [A]
+    seu_provenance: assumed
+    sources: []
+    tags: [google, tpu, commercial]
+
+  - id: google_tpu_v5p
+    vendor: Google
+    product: TPU v5p
+    category: commercial_ai
+    role: primary_compute
+    starmind_status: future_candidate
+    memory_bits: 1.6e11                   # [A]
+    dose_limit_krad_Si: 2.0               # [A]
+    dose_limit_basis: commercial_analogue_trillium
+    dose_limit_provenance: assumed
+    seu_R_ref_upsets_per_bit_day: 1.0e-10 # [A]
+    seu_provenance: assumed
+    sources: []
+    tags: [google, tpu, commercial]
+
+  - id: nvidia_h100
+    vendor: NVIDIA
+    product: H100 Tensor Core GPU
+    category: commercial_ai
+    role: primary_compute
+    starmind_status: future_candidate
+    starmind_status_note: Current-gen datacenter GPU; not Starmind first-gen.
+    memory: HBM3
+    memory_bits: 6.4e10                   # [A] ~80 GB-class bit count order
+    tdp_w_per_gpu: 700                    # [A] SXM TDP ballpark — verify before quoting
+    dose_limit_krad_Si: 2.0               # [A] commercial HBM analogue
+    dose_limit_basis: commercial_analogue_trillium
+    dose_limit_provenance: assumed
+    seu_R_ref_upsets_per_bit_day: 1.0e-10 # [A]
+    seu_provenance: assumed
+    sources: []
+    tags: [nvidia, hopper, commercial, hbm]
+
+  - id: nvidia_b200
+    vendor: NVIDIA
+    product: Blackwell B200
+    category: commercial_ai
+    role: primary_compute
+    starmind_status: future_candidate
+    memory: HBM3e
+    memory_bits: 1.5e11                   # [A]
+    tdp_w_per_gpu: 1000                   # [A] ballpark — verify before quoting
+    dose_limit_krad_Si: 2.0               # [A]
+    dose_limit_basis: commercial_analogue_trillium
+    dose_limit_provenance: assumed
+    seu_R_ref_upsets_per_bit_day: 1.0e-10 # [A]
+    seu_provenance: assumed
+    sources: []
+    tags: [nvidia, blackwell, commercial, hbm]
+
+  - id: nvidia_gb200_nvl72
+    vendor: NVIDIA
+    product: GB200 NVL72
+    category: commercial_ai
+    role: primary_compute
+    starmind_status: future_candidate
+    starmind_status_note: Rack-scale predecessor class to Rubin NVL72 packing.
+    memory_bits: 8.0e11                   # [A]
+    dose_limit_krad_Si: 2.0               # [A]
+    dose_limit_basis: commercial_analogue_trillium
+    dose_limit_provenance: assumed
+    seu_R_ref_upsets_per_bit_day: 1.0e-10 # [A]
+    seu_provenance: assumed
+    sources: []
+    tags: [nvidia, blackwell, nvl72, commercial]
+
+  - id: amd_instinct_mi300x
+    vendor: AMD
+    product: Instinct MI300X
+    category: commercial_ai
+    role: primary_compute
+    starmind_status: future_candidate
+    memory: HBM3
+    memory_bits: 1.5e11                   # [A]
+    tdp_w_per_gpu: 750                    # [A] ballpark
+    dose_limit_krad_Si: 2.0               # [A]
+    dose_limit_basis: commercial_analogue_trillium
+    dose_limit_provenance: assumed
+    seu_R_ref_upsets_per_bit_day: 1.0e-10 # [A]
+    seu_provenance: assumed
+    sources: []
+    tags: [amd, instinct, commercial, hbm]
+
+  - id: amd_instinct_mi350
+    vendor: AMD
+    product: Instinct MI350 (family placeholder)
+    category: commercial_ai
+    role: primary_compute
+    starmind_status: future_candidate
+    memory_bits: 2.0e11                   # [A]
+    dose_limit_krad_Si: 2.0               # [A]
+    dose_limit_basis: commercial_analogue_trillium
+    dose_limit_provenance: assumed
+    seu_R_ref_upsets_per_bit_day: 1.0e-10 # [A]
+    seu_provenance: assumed
+    sources: []
+    tags: [amd, instinct, commercial]
+
+  - id: intel_gaudi3
+    vendor: Intel
+    product: Gaudi 3
+    category: commercial_ai
+    role: primary_compute
+    starmind_status: future_candidate
+    memory_bits: 1.0e11                   # [A]
+    dose_limit_krad_Si: 2.0               # [A]
+    dose_limit_basis: commercial_analogue_trillium
+    dose_limit_provenance: assumed
+    seu_R_ref_upsets_per_bit_day: 1.0e-10 # [A]
+    seu_provenance: assumed
+    sources: []
+    tags: [intel, gaudi, commercial]
+
+  - id: amazon_trainium2
+    vendor: Amazon (Annapsurna)
+    product: Trainium2
+    category: commercial_ai
+    role: primary_compute
+    starmind_status: future_candidate
+    memory_bits: 8.0e10                   # [A]
+    dose_limit_krad_Si: 2.0               # [A]
+    dose_limit_basis: commercial_analogue_trillium
+    dose_limit_provenance: assumed
+    seu_R_ref_upsets_per_bit_day: 1.0e-10 # [A]
+    seu_provenance: assumed
+    sources: []
+    tags: [amazon, trainium, commercial]
+
+  - id: microsoft_maia_100
+    vendor: Microsoft
+    product: Maia 100
+    category: commercial_ai
+    role: primary_compute
+    starmind_status: future_candidate
+    memory_bits: 8.0e10                   # [A]
+    dose_limit_krad_Si: 2.0               # [A]
+    dose_limit_basis: commercial_analogue_trillium
+    dose_limit_provenance: assumed
+    seu_R_ref_upsets_per_bit_day: 1.0e-10 # [A]
+    seu_provenance: assumed
+    sources: []
+    tags: [microsoft, maia, commercial]
+
+  - id: meta_mtia
+    vendor: Meta
+    product: MTIA (family placeholder)
+    category: commercial_ai
+    role: primary_compute
+    starmind_status: future_candidate
+    memory_bits: 5.0e10                   # [A]
+    dose_limit_krad_Si: 2.0               # [A]
+    dose_limit_basis: commercial_analogue_trillium
+    dose_limit_provenance: assumed
+    seu_R_ref_upsets_per_bit_day: 1.0e-10 # [A]
+    seu_provenance: assumed
+    sources: []
+    tags: [meta, mtia, commercial]
+
+  - id: cerebras_wafer_scale
+    vendor: Cerebras
+    product: Wafer-Scale Engine (WSE family)
+    category: commercial_ai
+    role: primary_compute
+    starmind_status: speculative
+    starmind_status_note: >
+      Huge die / thermal / packaging challenges for orbit; included only as a
+      long-shot vendor-agnostic entry. No public LEO radiation data [?].
+    memory_bits: 5.0e11                   # [A]
+    dose_limit_krad_Si: 2.0               # [A]
+    dose_limit_basis: commercial_analogue_trillium
+    dose_limit_provenance: assumed
+    seu_R_ref_upsets_per_bit_day: 1.0e-10 # [A]
+    seu_provenance: assumed
+    sources: []
+    tags: [cerebras, speculative, commercial]
+
+  - id: groq_lpu
+    vendor: Groq
+    product: LPU
+    category: commercial_ai
+    role: primary_compute
+    starmind_status: speculative
+    memory_bits: 2.0e10                   # [A]
+    dose_limit_krad_Si: 2.0               # [A]
+    dose_limit_basis: commercial_analogue_trillium
+    dose_limit_provenance: assumed
+    seu_R_ref_upsets_per_bit_day: 1.0e-10 # [A]
+    seu_provenance: assumed
+    sources: []
+    tags: [groq, speculative, commercial]
+
+  - id: tenstorrent_wormhole
+    vendor: Tenstorrent
+    product: Wormhole
+    category: commercial_ai
+    role: primary_compute
+    starmind_status: future_candidate
+    memory_bits: 4.0e10                   # [A]
+    dose_limit_krad_Si: 2.0               # [A]
+    dose_limit_basis: commercial_analogue_trillium
+    dose_limit_provenance: assumed
+    seu_R_ref_upsets_per_bit_day: 1.0e-10 # [A]
+    seu_provenance: assumed
+    sources: []
+    tags: [tenstorrent, commercial]
+
+  - id: sambanova_sn40
+    vendor: SambaNova
+    product: SN40 / RDU family placeholder
+    category: commercial_ai
+    role: primary_compute
+    starmind_status: speculative
+    memory_bits: 8.0e10                   # [A]
+    dose_limit_krad_Si: 2.0               # [A]
+    dose_limit_basis: commercial_analogue_trillium
+    dose_limit_provenance: assumed
+    seu_R_ref_upsets_per_bit_day: 1.0e-10 # [A]
+    seu_provenance: assumed
+    sources: []
+    tags: [sambanova, speculative]
+
+  # ---------------------------------------------------------------------------
+  # Edge / module AI
+  # ---------------------------------------------------------------------------
+  - id: nvidia_jetson_agx_orin
+    vendor: NVIDIA
+    product: Jetson AGX Orin
+    category: edge_ai
+    role: edge_compute
+    starmind_status: demo_scale_candidate
+    starmind_status_note: Used in many space/edge demos; not Starmind-class kW payload.
+    memory_bits: 5.0e10                   # [A]
+    tdp_w_per_gpu: 60                     # [A] module mode ballpark
+    dose_limit_krad_Si: 2.0               # [A]
+    dose_limit_basis: commercial_analogue_trillium
+    dose_limit_provenance: assumed
+    seu_R_ref_upsets_per_bit_day: 1.0e-10 # [A]
+    seu_provenance: assumed
+    sources: []
+    tags: [nvidia, jetson, edge]
+
+  - id: qualcomm_cloud_ai_100
+    vendor: Qualcomm
+    product: Cloud AI 100
+    category: edge_ai
+    role: inference
+    starmind_status: future_candidate
+    memory_bits: 2.0e10                   # [A]
+    dose_limit_krad_Si: 2.0               # [A]
+    dose_limit_basis: commercial_analogue_trillium
+    dose_limit_provenance: assumed
+    seu_R_ref_upsets_per_bit_day: 1.0e-10 # [A]
+    seu_provenance: assumed
+    sources: []
+    tags: [qualcomm, inference, edge]
+
+  # ---------------------------------------------------------------------------
+  # Space-grade / rad-tolerant (usually not AI datacenter dies)
+  # ---------------------------------------------------------------------------
+  - id: bae_rad750
+    vendor: BAE Systems
+    product: RAD750
+    category: legacy_anchor
+    role: flight_computer
+    starmind_status: rad_hard_anchor_not_ai
+    starmind_status_note: >
+      CPU, not an AI accelerator. Kept as the rad-hard dose/SEU anchor for
+      presets and sensitivity comparisons.
+    memory_bits: 1.0e8                    # [A] not representative of HBM
+    dose_limit_krad_Si: 200.0             # [S] original RAD750 spec
+    dose_limit_basis: rad750_tid_spec
+    dose_limit_provenance: sourced
+    seu_R_ref_upsets_per_bit_day: 1.0e-11 # [S] original RAD750 SEU figure
+    seu_provenance: sourced
+    sources:
+      - url: https://vivapowerpc.eu/docs/rad750.pdf
+        claim: "RAD750 200 krad(Si), 1e-11 upsets/bit-day (legacy datasheet)"
+        tag: S
+      - url: https://www.ecb.torontomu.ca/~courses/ee8205/lectures/RAD-750-Family.pdf
+        claim: "Later RAD750 family up to ~1 Mrad(Si) described (secondary lecture notes)"
+        tag: S
+    tags: [bae, rad_hard, cpu, anchor]
+
+  - id: bae_rad5545
+    vendor: BAE Systems
+    product: RAD5545 (family placeholder)
+    category: space_rad_tolerant
+    role: flight_computer
+    starmind_status: rad_hard_host_not_ai
+    dose_limit_krad_Si: 1000.0            # [A] later-gen "up to 1 Mrad" class — treat as soft [A] until datasheet attached
+    dose_limit_basis: later_rad750_family_order_of_magnitude
+    dose_limit_provenance: assumed
+    seu_R_ref_upsets_per_bit_day: 1.0e-11 # [A]
+    seu_provenance: assumed
+    memory_bits: 1.0e9                    # [A]
+    sources: []
+    tags: [bae, rad_hard, cpu]
+
+  - id: amd_versal_xqr
+    vendor: AMD (Xilinx)
+    product: XQR Versal (space-grade Adaptive SoC)
+    category: space_rad_tolerant
+    role: adaptive_soc
+    starmind_status: onboard_accel_candidate
+    starmind_status_note: >
+      Space-grade Versal line exists for orbital digital; not a Rubin-class
+      training cluster. TID/SEU numbers must come from the specific slash sheet —
+      left as conservative commercial-vs-rad blend pending datasheet [?].
+    memory_bits: 1.0e10                   # [A]
+    dose_limit_krad_Si: 100.0             # [?] placeholder — NOT a datasheet fact
+    dose_limit_basis: placeholder_pending_slash_sheet
+    dose_limit_provenance: assumed
+    seu_R_ref_upsets_per_bit_day: 5.0e-11 # [A]
+    seu_provenance: assumed
+    sources: []
+    tags: [amd, xilinx, versal, space_grade, fpga]
+
+  - id: microchip_rt_polarfire
+    vendor: Microchip
+    product: RT PolarFire FPGA
+    category: space_rad_tolerant
+    role: fpga
+    starmind_status: support_logic_candidate
+    memory_bits: 5.0e8                    # [A]
+    dose_limit_krad_Si: 100.0             # [?] placeholder pending slash sheet
+    dose_limit_basis: placeholder_pending_slash_sheet
+    dose_limit_provenance: assumed
+    seu_R_ref_upsets_per_bit_day: 5.0e-11 # [A]
+    seu_provenance: assumed
+    sources: []
+    tags: [microchip, polarfire, space_grade, fpga]
+
+  - id: frontgrade_gr740
+    vendor: Frontgrade / Cobham Gaisler
+    product: GR740
+    category: space_rad_tolerant
+    role: flight_computer
+    starmind_status: rad_hard_host_not_ai
+    memory_bits: 5.0e8                    # [A]
+    dose_limit_krad_Si: 100.0             # [?] placeholder pending datasheet
+    dose_limit_basis: placeholder_pending_slash_sheet
+    dose_limit_provenance: assumed
+    seu_R_ref_upsets_per_bit_day: 1.0e-11 # [A]
+    seu_provenance: assumed
+    sources: []
+    tags: [gaisler, sparc, rad_hard, cpu]
+
+# Preset aliases used by evaluate(config) chip_preset=...
+preset_aliases:
+  commercial: google_trillium_tpu_v6e
+  rad_hard: bae_rad750
+  custom: null   # user supplies dose_limit_krad_Si

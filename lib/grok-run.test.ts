@@ -20,7 +20,7 @@ const OEM = circularOemText({ altitudeKm: 650, inclinationDeg: sunSynchronousInc
 
 const doc = (over: Partial<{ records: CaseRecord[]; workingOem: string | null }> = {}) => ({ id: CASE_ID, records: RECORDS, workingOem: null, ...over });
 const NO_MGMT = { ...TEST_ENV, managementKey: null };
-const FLIGHT = { mcpUrl: "https://flight.example/mcp", scoreUrl: "https://flight.example/score", token: "tok-123456" };
+const FLIGHT = { mcpUrl: "https://flight.example/mcp", scoreUrl: "https://flight.example/score", healthUrl: "https://flight.example/health", token: "tok-123456" };
 const fast = { pollMs: 1 };
 
 describe("with a flight server", () => {

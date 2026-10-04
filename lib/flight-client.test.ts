@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { PhysicsUnavailableError, flightEnv, scoreOrbitVia } from "./flight-client";
+import { PhysicsUnavailableError, flightEnv, scoreOrbitVia, wakeFlightServer } from "./flight-client";
 import type { ScoreOrbitInput } from "./holdout";
 
 const INPUT: ScoreOrbitInput = { altitude_km: 650, inclination: "sso", ltan_hours: 6, shield_mm_Al: 5, chip_id: "nvidia_jetson_agx_orin" };
-const FLIGHT = { mcpUrl: "https://flight.example/mcp", scoreUrl: "https://flight.example/score", token: "tok-123456" };
+const FLIGHT = { mcpUrl: "https://flight.example/mcp", scoreUrl: "https://flight.example/score", healthUrl: "https://flight.example/health", token: "tok-123456" };
 
 describe("flightEnv", () => {
   it("is null with no FLIGHT_MCP_URL, so the route validates in-process", () => {
@@ -15,10 +15,16 @@ describe("flightEnv", () => {
     expect(flightEnv({ FLIGHT_MCP_URL: "https://flight.example/mcp", FLIGHT_MCP_TOKEN: " tok " })).toEqual({
       mcpUrl: "https://flight.example/mcp",
       scoreUrl: "https://flight.example/score",
+      healthUrl: "https://flight.example/health",
       token: "tok",
     });
     expect(flightEnv({ FLIGHT_MCP_URL: "https://flight.example/prefix/mcp/" })?.scoreUrl).toBe("https://flight.example/prefix/score");
     expect(flightEnv({ FLIGHT_MCP_URL: "https://flight.example" })?.scoreUrl).toBe("https://flight.example/score");
+  });
+
+  it("derives the health URL beside the score URL", () => {
+    expect(flightEnv({ FLIGHT_MCP_URL: "https://flight.example/mcp" })?.healthUrl).toBe("https://flight.example/health");
+    expect(flightEnv({ FLIGHT_MCP_URL: "https://flight.example/prefix/mcp" })?.healthUrl).toBe("https://flight.example/prefix/health");
   });
 
   it("has no token when none is set", () => {
@@ -89,5 +95,78 @@ describe("scoreOrbitVia", () => {
   it("does not put the token in an error message", async () => {
     const error = (await scoreOrbitVia(FLIGHT, { fetch: answering(401, {}) })(INPUT).catch((e) => e)) as Error;
     expect(error.message).not.toContain("tok-123456");
+  });
+});
+
+describe("wakeFlightServer", () => {
+  it("asks the health URL, with no token and nothing to score", async () => {
+    const seen: { url?: string; init?: RequestInit } = {};
+    await wakeFlightServer(FLIGHT, { fetch: answering(200, {}, seen) });
+    expect(seen.url).toBe("https://flight.example/health");
+    expect(seen.init?.method).toBe("GET");
+    expect(new Headers(seen.init?.headers).has("authorization")).toBe(false);
+  });
+
+  it("never throws, whatever happens to the request", async () => {
+    await expect(wakeFlightServer(FLIGHT, { fetch: (async () => { throw new Error("down"); }) as typeof fetch })).resolves.toBeUndefined();
+    await expect(wakeFlightServer(FLIGHT, { fetch: answering(503, {}) })).resolves.toBeUndefined();
+  });
+});
+
+describe("a flight server that was asleep", () => {
+  const sequence = (steps: (number | "throw")[]): { fetch: typeof fetch; calls: () => number } => {
+    let calls = 0;
+    const fetchImpl = (async () => {
+      const step = steps[Math.min(calls, steps.length - 1)];
+      calls += 1;
+      if (step === "throw") throw new Error("ECONNREFUSED");
+      return new Response(JSON.stringify(step === 200 ? { refused: false, lifetime_years: 3 } : { error: "waking" }), { status: step });
+    }) as typeof fetch;
+    return { fetch: fetchImpl, calls: () => calls };
+  };
+
+  it("is tried once more after a 502, 503 or 504, and the second answer is used", async () => {
+    for (const status of [502, 503, 504]) {
+      const s = sequence([status, 200]);
+      const result = await scoreOrbitVia(FLIGHT, { fetch: s.fetch, retryAfterMs: 1 })(INPUT);
+      expect(result).toMatchObject({ refused: false, lifetime_years: 3 });
+      expect(s.calls()).toBe(2);
+    }
+  });
+
+  it("is tried once more after a refused connection", async () => {
+    const s = sequence(["throw", 200]);
+    expect(await scoreOrbitVia(FLIGHT, { fetch: s.fetch, retryAfterMs: 1 })(INPUT)).toMatchObject({ refused: false });
+    expect(s.calls()).toBe(2);
+  });
+
+  it("is unavailable after two failures, never scored", async () => {
+    for (const steps of [["throw", "throw"], [503, 503], [503, "throw"]] as (number | "throw")[][]) {
+      const s = sequence(steps);
+      await expect(scoreOrbitVia(FLIGHT, { fetch: s.fetch, retryAfterMs: 1 })(INPUT)).rejects.toBeInstanceOf(PhysicsUnavailableError);
+      expect(s.calls()).toBe(2);
+    }
+  });
+
+  it("is not tried again for an answer that is not about waking: 200, 400, 401, 500", async () => {
+    for (const status of [200, 400, 401, 500]) {
+      const s = sequence([status]);
+      await scoreOrbitVia(FLIGHT, { fetch: s.fetch, retryAfterMs: 1 })(INPUT).catch(() => undefined);
+      expect(s.calls(), String(status)).toBe(1);
+    }
+  });
+
+  it("is not tried again once the deadline has passed", async () => {
+    const controller = new AbortController();
+    let calls = 0;
+    const fetchImpl = (async () => {
+      calls += 1;
+      controller.abort();
+      throw new DOMException("aborted", "AbortError");
+    }) as typeof fetch;
+    const error = (await scoreOrbitVia(FLIGHT, { fetch: fetchImpl, signal: controller.signal, retryAfterMs: 1 })(INPUT).catch((e) => e)) as Error;
+    expect(error).toBeInstanceOf(PhysicsUnavailableError);
+    expect(error.message).toContain("did not answer in time");
+    expect(calls).toBe(1);
   });
 });

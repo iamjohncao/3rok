@@ -18,7 +18,7 @@ const CASE_ID = "5a4c1f0e-3b7d-4b36-9c1a-2f6d7a8e9b10";
 const ALICE = { userId: "11111111-1111-4111-8111-111111111111", email: "alice@example.com" };
 const BOB = { userId: "22222222-2222-4222-8222-222222222222", email: "bob@example.com" };
 const OEM = circularOemText({ altitudeKm: 650, inclinationDeg: sunSynchronousInclinationDeg(650) });
-const FLIGHT = { mcpUrl: "https://flight.example/mcp", scoreUrl: "https://flight.example/score", token: "tok-123456" };
+const FLIGHT = { mcpUrl: "https://flight.example/mcp", scoreUrl: "https://flight.example/score", healthUrl: "https://flight.example/health", token: "tok-123456" };
 const NO_MGMT = { ...TEST_ENV, managementKey: null };
 
 function aliceCase(over: Partial<CaseDocument> = {}): CaseDocument {
@@ -35,7 +35,7 @@ function memoryStore(initial: CaseDocument[]) {
   };
 }
 
-type Harness = { deps: AskDeps; store: ReturnType<typeof memoryStore>; xai: FakeXai; scoreCalls: unknown[]; claim: Mock<AskDeps["claim"]> };
+type Harness = { deps: AskDeps; store: ReturnType<typeof memoryStore>; xai: FakeXai; scoreCalls: unknown[]; healthCalls: string[]; claim: Mock<AskDeps["claim"]> };
 
 /** Routes the flight server's /score to a stub, and everything else to the fake xAI. */
 function harness({
@@ -59,7 +59,12 @@ function harness({
 } = {}): Harness {
   const xai = fakeXai(script ?? (() => ({ output: [mcpSubmit(OEM), assistantMessage("Submitted.")] })));
   const scoreCalls: unknown[] = [];
+  const healthCalls: string[] = [];
   const fetchImpl = (async (url: RequestInfo | URL, init?: RequestInit) => {
+    if (String(url) === "https://flight.example/health") {
+      healthCalls.push(String(url));
+      return new Response("{}");
+    }
     if (String(url) === "https://flight.example/score") {
       scoreCalls.push(JSON.parse(init!.body as string));
       return new Response(JSON.stringify({ refused: false, lifetime_years: lifetime, assumptions_note: "A ranking." }), { status: scoreStatus });
@@ -67,7 +72,7 @@ function harness({
     return xai.fetch(url, init);
   }) as typeof fetch;
   const store = memoryStore([doc]);
-  return { deps: { xai: xaiEnv, flight, fetch: fetchImpl, store, claim, allowedEmails: allowed, now: () => new Date("2026-10-04T12:00:00.000Z") }, store, xai, scoreCalls, claim };
+  return { deps: { xai: xaiEnv, flight, fetch: fetchImpl, store, claim, allowedEmails: allowed, now: () => new Date("2026-10-04T12:00:00.000Z"), scoreRetryMs: 1 }, store, xai, scoreCalls, healthCalls, claim };
 }
 
 const ask = (h: Harness, body: unknown = { caseId: CASE_ID, instruction: "Choose a dawn-dusk orbit." }, who = ALICE) => handleAsk(who, body, h.deps);
@@ -143,6 +148,23 @@ describe("who may ask, before anything is spent", () => {
     expect(result.body.error).toContain("no train records");
     expect(h.claim).not.toHaveBeenCalled();
     expect(h.xai.requests).toHaveLength(0);
+  });
+});
+
+describe("a flight server that sleeps when idle", () => {
+  it("is woken when a run starts, once, and only after the run is allowed", async () => {
+    const h = harness();
+    await ask(h);
+    expect(h.healthCalls).toEqual(["https://flight.example/health"]);
+  });
+
+  it("is not woken for a request that is refused, or when there is no flight server", async () => {
+    const refused = harness({ claim: vi.fn<AskDeps["claim"]>(async () => ({ ok: false, retryAfterSeconds: 60 })) });
+    await ask(refused);
+    expect(refused.healthCalls).toEqual([]);
+    const none = harness({ flight: null, script: () => ({ output: [assistantMessage("hi")] }) });
+    await ask(none);
+    expect(none.healthCalls).toEqual([]);
   });
 });
 

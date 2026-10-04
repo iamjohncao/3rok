@@ -10,6 +10,8 @@ export type FlightEnv = {
   mcpUrl: string;
   /** Where the evaluator posts a score. */
   scoreUrl: string;
+  /** Answers without scoring. Used to wake a host that sleeps when idle. */
+  healthUrl: string;
   token: string | null;
 };
 
@@ -31,9 +33,11 @@ export function flightEnv(env: Env = process.env): FlightEnv | null {
   base.pathname = base.pathname.replace(/\/mcp\/?$/, "").replace(/\/+$/, "");
   base.search = "";
   base.hash = "";
+  const root = base.toString().replace(/\/+$/, "");
   return {
     mcpUrl: url.toString(),
-    scoreUrl: `${base.toString().replace(/\/+$/, "")}/score`,
+    scoreUrl: `${root}/score`,
+    healthUrl: `${root}/health`,
     token: env.FLIGHT_MCP_TOKEN?.trim() || null,
   };
 }
@@ -45,21 +49,55 @@ export class PhysicsUnavailableError extends Error {
   }
 }
 
+/**
+ * Starts the flight server if it sleeps when idle (a free host spins down after minutes without a
+ * request and takes up to a minute to come back). Called when an Ask Grok run starts, so the server is
+ * awake by the time Grok calls a tool and the evaluator scores. Never throws, and nothing waits on it.
+ */
+export function wakeFlightServer(
+  flight: FlightEnv,
+  { fetch: fetchImpl = fetch, timeoutMs = 90_000 }: { fetch?: typeof fetch; timeoutMs?: number } = {},
+): Promise<void> {
+  return fetchImpl(flight.healthUrl, { method: "GET", signal: AbortSignal.timeout(timeoutMs) }).then(
+    () => undefined,
+    () => undefined,
+  );
+}
+
+/** Statuses a host that is waking up answers with, and so worth one more try. */
+const WAKING = new Set([502, 503, 504]);
+const RETRY_AFTER_MS = 3000;
+
 export function scoreOrbitVia(
   flight: FlightEnv,
-  { fetch: fetchImpl = fetch, signal }: { fetch?: typeof fetch; signal?: AbortSignal } = {},
+  { fetch: fetchImpl = fetch, signal, retryAfterMs = RETRY_AFTER_MS }: { fetch?: typeof fetch; signal?: AbortSignal; retryAfterMs?: number } = {},
 ): ScoreOrbit {
+  const post = (input: ScoreOrbitInput) =>
+    fetchImpl(flight.scoreUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(flight.token ? { Authorization: `Bearer ${flight.token}` } : {}) },
+      body: JSON.stringify(input),
+      signal,
+    });
+
+  const pause = () => new Promise((resolve) => setTimeout(resolve, retryAfterMs));
+
   return async (input: ScoreOrbitInput): Promise<ScoreOrbitResult> => {
-    let response: Response;
-    try {
-      response = await fetchImpl(flight.scoreUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...(flight.token ? { Authorization: `Bearer ${flight.token}` } : {}) },
-        body: JSON.stringify(input),
-        signal,
-      });
-    } catch {
-      throw new PhysicsUnavailableError("The physics server could not be reached.");
+    // Two tries at most. A host that was asleep may refuse the first connection or answer 502, 503 or 504.
+    let response: Response | null = null;
+    for (let attempt = 1; response === null; attempt++) {
+      try {
+        const answer = await post(input);
+        if (attempt === 1 && WAKING.has(answer.status) && !signal?.aborted) {
+          await pause();
+          continue;
+        }
+        response = answer;
+      } catch {
+        if (signal?.aborted) throw new PhysicsUnavailableError("The physics server did not answer in time.");
+        if (attempt >= 2) throw new PhysicsUnavailableError("The physics server could not be reached.");
+        await pause();
+      }
     }
 
     const text = await response.text().catch(() => "");

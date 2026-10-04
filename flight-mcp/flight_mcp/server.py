@@ -159,11 +159,28 @@ def create_app(
     candidates: CandidateStore | None = None,
 ) -> Starlette:
     server, _ = build_server(candidates, evaluate)
-    manager = StreamableHTTPSessionManager(app=server, stateless=stateless, json_response=json_response)
 
-    class MCPEndpoint:
-        async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-            await manager.handle_request(scope, receive, send)
+    if stateless:
+        # No sessions, so nothing outlives a request. A manager for each request needs no lifespan event,
+        # which lets this run on a host that never sends one (a Vercel Function). It is a few objects, not a connection.
+        class MCPEndpoint:
+            async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+                manager = StreamableHTTPSessionManager(app=server, stateless=True, json_response=json_response)
+                async with manager.run():
+                    await manager.handle_request(scope, receive, send)
+
+        lifespan = None
+    else:
+        manager = StreamableHTTPSessionManager(app=server, stateless=False, json_response=json_response)
+
+        class MCPEndpoint:  # type: ignore[no-redef]
+            async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+                await manager.handle_request(scope, receive, send)
+
+        @contextlib.asynccontextmanager
+        async def lifespan(_: Starlette) -> Any:  # type: ignore[no-redef]
+            async with manager.run():
+                yield
 
     async def health(_: Request) -> Response:
         return JSONResponse({"ok": True, "server": SERVER_NAME, "tools": list(TOOL_NAMES)})
@@ -188,11 +205,6 @@ def create_app(
             LOG.exception("score failed")
             return JSONResponse({"error": "The score could not be computed. No lifetime is returned."}, status_code=500)
         return JSONResponse(result)
-
-    @contextlib.asynccontextmanager
-    async def lifespan(_: Starlette) -> Any:
-        async with manager.run():
-            yield
 
     app = Starlette(
         routes=[

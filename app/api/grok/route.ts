@@ -6,7 +6,7 @@ import { allowedEmails, claimGrokRun, runsPerHour } from "../../../lib/grok-limi
 import { scrub, xaiEnv } from "../../../lib/xai";
 
 // Ask Grok can run for minutes: Grok reads the case, calls the flight tools, and the evaluator scores
-// the file. The handler stops at 270 seconds, under this limit.
+// the file. Grok gets 200 seconds and scoring 80 after it, under this limit.
 export const maxDuration = 300;
 export const dynamic = "force-dynamic";
 

@@ -10,10 +10,15 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 # starmind-physics is deliberately not listed. It is the package in this repository
-# (../starmind-physics), not a PyPI project. Install it first: see README.md.
+# (../starmind-physics), not a PyPI project. Install it first: see README.md. Its own dependencies
+# (numpy, astropy, pyyaml, aep8) are listed here too, so requirements.txt and this file agree.
 dependencies = [
   "mcp>=1.27,<2",
   "uvicorn>=0.30",
+  "numpy>=1.26",
+  "astropy>=6.0",
+  "pyyaml>=6.0",
+  "aep8>=0.1.0",
 ]
 
 [project.optional-dependencies]
@@ -21,6 +26,9 @@ dev = ["pytest>=8.0"]
 
 [project.scripts]
 flight-mcp = "flight_mcp.server:main"
+
+[tool.vercel]
+entrypoint = "app:app"
 
 [tool.setuptools.packages.find]
 where = ["."]

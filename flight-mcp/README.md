@@ -33,14 +33,38 @@ xAI connects only to streaming HTTP or SSE over HTTPS. A stdio server will not c
 
 ## Deploy
 
-The image needs the whole scientific stack (`numpy`, `astropy`, `aep8`), so use a container host. A serverless Python function is too small for it. Build from the repository root:
+The server needs `numpy`, `astropy` and `aep8`, about 225 MB installed, and about 100 MB of memory while it scores. Every option below has a free tier. All of them were checked here the way the host would run them: a clean install from the host's own file, then calls to `/health`, `/score` and `/mcp`. None was run on the host itself.
+
+| Host | Fits | Notes |
+|---|---|---|
+| **Vercel** (a second project) | Free Hobby: 2 GB, 300 s, 500 MB Python bundle | Recommended: same account and the same GitHub integration. Wakes in seconds. |
+| **Render** (free web service) | 750 hours a month | Builds the Dockerfile from GitHub. Sleeps after 15 idle minutes and takes about a minute to wake. The app wakes it early. |
+| **Google Cloud Run** | Free monthly quota | Scales to zero. Needs a billing account on file. |
+
+Not options: **Supabase** runs Edge Functions on Deno, with no Python and no `numpy`. **Cloudflare Workers** cannot load `aep8`. **Koyeb** now asks for a card. Hosts that only run a FastMCP file cannot install the physics package or serve `/score`.
+
+### Vercel
+
+1. In Vercel, **Add New → Project**, import the same GitHub repository (`iamjohncao/3rok`), and set **Root Directory** to `flight-mcp`. Name it something other than `3rok` and `3rok1`.
+2. Framework preset: leave it on **Other**. Vercel finds `app.py`, installs `requirements.txt`, and runs the stateless `app` in it.
+3. Add the environment variable `FLIGHT_MCP_TOKEN` (any long random string).
+4. Deploy, then open `https://<project>.vercel.app/health`. It should answer `{"ok": true, ...}`. Use the production domain, not a preview URL: previews sit behind Vercel's login.
+5. On the `3rok` project, set `FLIGHT_MCP_URL` to `https://<project>.vercel.app/mcp` and `FLIGHT_MCP_TOKEN` to the same string.
+
+`app.py` runs without sessions, answers in plain JSON, and does not depend on a startup event. It imports `starmind_physics` from `vendor/`, a copy of `../starmind-physics/starmind_physics` without the optimizer scripts, because the rest of the repository is not in the bundle. After a change to `starmind-physics`, run `python scripts/sync_vendor.py` and commit `vendor/`. A test fails until you do.
+
+### Render or Cloud Run
+
+Build from the repository root, with the Dockerfile at `flight-mcp/Dockerfile`:
 
 ```bash
 docker build -f flight-mcp/Dockerfile -t 3rok-flight-mcp .
 docker run -p 8000:8000 -e FLIGHT_MCP_TOKEN=... 3rok-flight-mcp
 ```
 
-Then set `FLIGHT_MCP_URL` (`https://<host>/mcp`) and `FLIGHT_MCP_TOKEN` as environment variables on the Vercel project. Until `FLIGHT_MCP_URL` is set, the app leaves the `mcp` tool out of the Grok request and validates in-process.
+On Render: **New → Web Service**, connect the repository, language **Docker**, Dockerfile path `flight-mcp/Dockerfile`, instance type **Free**, and the same environment variables. Then set `FLIGHT_MCP_URL` (`https://<host>/mcp`) and `FLIGHT_MCP_TOKEN` on the Vercel project.
+
+Until `FLIGHT_MCP_URL` is set, the app leaves the `mcp` tool out of the Grok request and validates in-process, and a revision stays unscored.
 
 ## The two validators
 

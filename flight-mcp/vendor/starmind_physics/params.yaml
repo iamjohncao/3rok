@@ -1,0 +1,141 @@
+# =============================================================================
+# Starmind physics core — ALL assumed and sourced parameters in one place.
+# Legend:  [S] = sourced (citation in comment)  |  [A] = assumption / tunable
+# Never treat [A] values as measured facts about Starmind or Nvidia Rubin.
+# =============================================================================
+
+earth:
+  # [S] WGS84 / conventional constants (standard textbook values)
+  R_E_km: 6378.137
+  mu_km3_s2: 398600.4418
+  J2: 1.08263e-3
+  omega_earth_rad_s: 7.2921159e-5
+  # [S] Wikipedia SSO rule-of-thumb constant used as cross-check:
+  #     cos i = -(a / 12352 km)^(7/2)
+  sso_a_ref_km: 12352.0
+  # [S] mean tropical year length used in probe SSO formula
+  year_days: 365.2422
+
+orbit_sampling:
+  # [A] number of ground-track samples for orbit-averaged flux (~1 day)
+  n_samples: 400
+  # [A] sample span in seconds (1 day); crude spherical track, no J2 RAAN drift
+  sample_span_s: 86400.0
+  # [A] epoch for aep8 Time array (model is static min/max; epoch is geometric)
+  epoch_utc: "2026-10-03T12:00:00"
+
+flux:
+  # [S] aep8 AE8/AP8 integral energies used in the plan probe
+  proton_energy_MeV: 10.0
+  electron_energy_MeV: 1.0
+  # [A] default solar activity for AP8/AE8 ('max' or 'min')
+  solar: "max"
+
+space_weather:
+  # [A] F10.7 solar flux range (sfu) mapped linearly onto solar_phase 0..1
+  f107_min_sfu: 64.0
+  f107_max_sfu: 250.0
+
+dose:
+  # Exponential dose-depth fallback [A] — NOT SHIELDOSE-2.
+  # Form: dose_rate_krad_Si_per_yr =
+  #   k_p * Φ_p(>10 MeV) * exp(-t_Al / λ_p)
+  # + k_e * Φ_e(>1 MeV)  * exp(-t_Al / λ_e)
+  # Calibrated only for order-of-magnitude LEO ranking, not absolute dose.
+  # Sanity target [A]: ~0.15 krad/yr behind ~5 mm Al at ~550 km SSO
+  # (inspired by Google's published ~750 rad(Si) / 5 yr shielded expectation
+  #  for Trillium — that figure is for a different mission/shield [S:
+  #  https://research.google/blog/exploring-a-space-based-scalable-ai-infrastructure-system-design/]).
+  k_p_krad_yr_per_flux: 0.008   # [A]
+  k_e_krad_yr_per_flux: 2.0e-6  # [A]
+  lambda_p_mm: 3.5              # [A] Al e-folding thickness for proton term
+  lambda_e_mm: 1.5              # [A] Al e-folding thickness for electron term
+
+chip_presets:
+  # Legacy aliases — full catalogue is data/ai_chips.yaml (use chip_id=...).
+  # Dose limits are presets, not Starmind/Rubin facts [?].
+  commercial:
+    # [S] Google Trillium (TPU v6e) HBM irregularities began at 2 krad(Si)
+    #     (single-chip proton-beam test — not Nvidia Rubin)
+    # Aliases to chip id: google_trillium_tpu_v6e
+    dose_limit_krad_Si: 2.0
+    label: "commercial AI accelerator (HBM-limited, Google Trillium anchor)"
+  rad_hard:
+    # [S] BAE RAD750 specified at 200 krad(Si) — a CPU, used only as rad-hard preset
+    # Aliases to chip id: bae_rad750
+    dose_limit_krad_Si: 200.0
+    label: "rad-hard CPU-class (RAD750 anchor)"
+  # Default custom slider starts at commercial
+  custom_default_krad_Si: 2.0  # [A] starting point for adjustable limit
+
+seu:
+  # Hackathon shortcut [A]: R = R_ref * (Φ_p / Φ_ref)
+  # Trapped protons dominate SAA / inner belt; not a CREME-MC Weibull integral.
+  R_ref_upsets_per_bit_day: 1.0e-10   # [A]
+  Phi_ref_p_cm2_s: 100.0              # [A] reference >10 MeV proton flux
+  bits: 8.0e10                        # [A] ~100 Gbit device memory scale
+  t_recovery_s: 30.0                  # [A] mean recovery / scrub time per upset event
+  # [A] if availability falls below this, SEU-availability lifetime → 0
+  min_availability: 0.90
+  # [A] years of integrated downtime allowed before "SEU death" when above floor
+  downtime_budget_years: 0.5
+
+thermal:
+  # Norris–Landzberg / Coffin–Manson style [S params for solder, A refs]
+  # SnPb / reported SAC305-like: n=1.9, m=1/3, Ea/k=1414 K
+  # [S] Fan 2008 ECTC / Accendo Reliability summaries (see plan)
+  n_coffin_manson: 1.9          # [S] exponent on ΔT
+  N_ref_cycles: 3000.0          # [A] cycles to failure at ΔT_ref
+  dT_ref_K: 80.0                # [A]
+  # [A] temperature swing when load-follows-sun during eclipse
+  dT_eclipse_load_follow_K: 40.0
+  # [A] small residual swing for constant-load (batteries bridge eclipse)
+  dT_eclipse_constant_load_K: 5.0
+  # [A] no eclipse → no thermal-cycle wear in this model
+  dT_no_eclipse_K: 0.0
+
+power:
+  # [S] solar constant textbook value ~1361 W/m² (not re-fetched)
+  solar_constant_W_m2: 1361.0
+  # [A] beginning-of-life array efficiency (cell+packing+wiring)
+  eta_BOL: 0.28
+  # [A] cosine / pointing factor (orbit-average, fixed)
+  cos_theta: 0.95
+  # [A] default solar-array collecting area (m²) if config omits it
+  default_array_area_m2: 200.0
+  # [A] linear array degradation vs unshielded / thinly shielded dose proxy
+  # deg = min(deg_max, k_deg * dose_rate_array_krad_yr * t_years)
+  k_deg_per_krad: 0.02          # [A]
+  array_shield_mm_Al: 0.5       # [A] cover-glass / thin shield for array dose proxy
+  deg_max: 0.5                  # [A] cap
+  # [A] end-of-life: mean deliverable power must stay above this fraction of BOL sunlit power
+  p_min_fraction_of_BOL: 0.70
+
+radiator:
+  # Stefan–Boltzmann: Q = ε σ A (T^4 - T_sink^4)
+  sigma_W_m2_K4: 5.670374419e-8  # [S] Stefan–Boltzmann constant
+  epsilon: 0.85                  # [A] IR emissivity
+  T_rad_K: 300.0                 # [A] radiator operating temperature
+  T_sink_K: 3.0                  # [A] deep-space sink (ignores Earth IR/albedo)
+  # [A] fraction of mean electrical power that becomes heat to reject
+  heat_fraction: 1.0
+
+shielding:
+  # [S] aluminum density ~2.70 g/cm³
+  rho_Al_kg_m3: 2700.0
+  # [A] shielded surface area for mass penalty (box/payload envelope)
+  default_surface_area_m2: 40.0
+
+defaults:
+  # Search-space envelope [S] SpaceX FCC narrative: 500–2000 km, ~30° and SSO
+  altitude_km: 800.0
+  inclination: "sso"             # "sso" | degrees (e.g. 30)
+  ltan_hours: 6.0                # [A] dawn SSO default (high sunlight)
+  shield_mm_Al: 5.0              # [A]
+  radiator_area_m2: null         # null → size from Stefan–Boltzmann
+  chip_preset: "commercial"      # commercial | rad_hard | custom
+  dose_limit_krad_Si: null       # override / custom slider; null → preset
+  load_strategy: "constant"      # constant | load_follow_sun
+  array_area_m2: null            # null → power.default_array_area_m2
+  shield_surface_m2: null        # null → shielding.default_surface_area_m2
+  peak_compute_kW: 175.0         # [A] heat/power scale; SpaceX quotes 175 kW avg [S]

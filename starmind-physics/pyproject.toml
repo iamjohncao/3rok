@@ -10,16 +10,18 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [{ name = "Starmind hackathon" }]
+# What evaluate() needs. The Pareto search (starmind-optimize) needs pymoo, which brings scipy and
+# matplotlib, about 300 MB. It is an extra so a service that only scores an orbit (flight-mcp) does not carry it.
 dependencies = [
   "numpy>=1.26",
   "astropy>=6.0",
   "pyyaml>=6.0",
   "aep8>=0.1.0",
-  "pymoo>=0.6.1",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0"]
+optimize = ["pymoo>=0.6.1"]
+dev = ["pytest>=8.0", "pymoo>=0.6.1"]
 
 [project.scripts]
 starmind-optimize = "starmind_physics.scripts.optimize:main"
