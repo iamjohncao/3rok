@@ -56,9 +56,11 @@ describe("design-system rules", () => {
 });
 
 describe("testing page (Phase 8)", () => {
-  const testingFiles = [
+  // The pages that draw. They hold no case store at all.
+  const drawingFiles = [
     "app/test/page.tsx",
     "components/TestScreen.tsx",
+    "components/FlightFile.tsx",
     "components/Globe.tsx",
     "components/GlobeLoader.tsx",
     "components/OemReadout.tsx",
@@ -66,6 +68,9 @@ describe("testing page (Phase 8)", () => {
     "components/PhysicsPanel.tsx",
     "components/FitPanel.tsx",
   ].map((file) => join(root, file));
+  // The two files that read a case to import it. They read and never write.
+  const importFiles = ["components/CaseFlight.tsx", "components/ImportCase.tsx"].map((file) => join(root, file));
+  const testingFiles = [...drawingFiles, ...importFiles];
 
   it("never bundles Cesium: it loads from public/cesium with a script tag", () => {
     // Type-only uses (`typeof import("cesium")`, `import("cesium").Viewer`) are fine.
@@ -78,8 +83,13 @@ describe("testing page (Phase 8)", () => {
     expect(offenders(/api\/grok|api\.x\.ai|XAI_API_KEY/i, testingFiles)).toEqual([]);
   });
 
-  it("does not touch the case store, so scrubbing and playing write no log", () => {
-    expect(offenders(/case-store|case-ops|getCaseStore|applyHandEdit/, testingFiles)).toEqual([]);
+  it("does not touch the case store where it draws, so scrubbing and playing write no log", () => {
+    expect(offenders(/case-store|case-ops|getCaseStore|applyHandEdit|applyExport/, drawingFiles)).toEqual([]);
+  });
+
+  it("reads a case to import it and never saves one or writes its log", () => {
+    expect(offenders(/\.save\(|case-ops|applyHandEdit|applyExport|applyIngest|method:\s*["']PUT/, importFiles)).toEqual([]);
+    expect(offenders(/getCaseStore/, importFiles).length).toBe(importFiles.length);
   });
 
   it("does not show a thrust, Mach, throttle, propellant, or dynamic-pressure reading", () => {

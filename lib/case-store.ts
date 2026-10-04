@@ -5,6 +5,7 @@
 
 import type { CaseDocument } from "./case";
 import { chipIdFor } from "./case-ops";
+import { flightArtifact, type FlightSource } from "./export";
 import { idbFinished, idbResult, resolveIndexedDb } from "./idb";
 
 export type CaseSummary = {
@@ -13,6 +14,8 @@ export type CaseSummary = {
   /** From the chip-identity records. Null until the case has some. */
   chipFamily: string | null;
   hasOptimizedOem: boolean;
+  /** Which OEM string the testing page would fly: the working copy, else the optimized OEM, else none. */
+  flightSource: FlightSource | null;
   /** True when `holdoutError` is set. */
   isScored: boolean;
   /** UTC time of the last log entry, or null when the log is empty. */
@@ -44,6 +47,7 @@ export function summarizeCase(doc: CaseDocument): CaseSummary {
     name: doc.name,
     chipFamily: chipFamily(doc),
     hasOptimizedOem: doc.optimizedOem !== null,
+    flightSource: flightArtifact(doc)?.source ?? null,
     isScored: doc.holdoutError !== null,
     lastLogAt: doc.log.length > 0 ? doc.log[doc.log.length - 1].at : null,
     updatedAt: doc.updatedAt,

@@ -548,7 +548,17 @@ The user message is the editor's request plus the working OEM if one exists. Tra
 
 **What is being built.** The way a case leaves the editor and becomes the file on the globe, plus the downloadable record of the case.
 
-**Owns.** The export actions on the case screen, `lib/export.ts`, and the import control on `/test`.
+**Owns.** The export actions on the case screen, `lib/export.ts`, and the import control on `/test`. Also `lib/download.ts` (hands bytes to the browser), `components/FlightFile.tsx` (the parse-and-draw half of the old `TestScreen`), `components/CaseFlight.tsx` (loads one case for `/test`), and `components/ImportCase.tsx` (the picker).
+
+**Decisions this phase made, so the screen, the file and the log read the same thing.**
+
+- *One function names the flight.* `flightArtifact(doc)` in `lib/export.ts` returns the working copy when it has text, else the optimized OEM, else nothing. The globe, the `.oem` download, the case bundle and the case list's `flightSource` all read it, so no two of them can pick different text.
+- *Import is reading a case, not receiving a file.* `/test?case=<id>` loads the case through `GET /api/cases/[id]` as the signed-in account. Another account's id, or one that does not exist, is the same 404, so a case id cannot be probed. A signed-out visit asks for sign-in. An address that is not a UUID is refused before any request. With no `case` in the address the page flies the fixture and says so. `Import case` on `/test` lists the account's cases with which OEM string each would fly.
+- *The globe flies the saved case, not a copy.* `Export to testing` logs the export, saves, then opens `/test?case=<id>`. Nothing is stored apart from the case. Reopening `/test?case=<id>` later flies whatever the case holds then, and the banner says which string it is. Block `/api/grok` and the page still works from the file in the case.
+- *Export is logged before it happens.* Each action saves one `export` entry first. If the save fails the file is not sent, so no export is silent. The entry names what left and which OEM string it was, with its line count and byte count. It holds no copy of the OEM. Export is refused while the working-copy box has unsaved text: it sends the saved copy, and the screen says so.
+- *`Download case` is one JSON file.* `CASE-<id>.json`: `bundle`, `bundle_version`, `exported_at`, a `note` that says the chat is not the flight and that a working copy is never scored, `flight_artifact` (`workingOem`, `optimizedOem` or null), and `case`, which is the case document without `accountId`: every record with `value_status` and `split`, the log, both OEM strings, `holdoutError`, and `chipIds`. It carries its own `export` entry. It is a record, not an import format: there is no bundle upload.
+- *A broken file is not drawn.* A flight that fails `lib/oem.ts` shows the validator's sentences, the case name and which string it was, and no globe.
+- *Not built.* The printable case view in the paragraph below. The plan does not own it in Done, and no gate needs it. The vehicle panel still reads no mass or envelope from a case: the contract names no key for either, so the panel says `not stated in the case` and does not rank on mass.
 
 **Done.**
 

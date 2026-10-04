@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getAttachmentStore } from "../lib/attachment-store";
 import type { CaseDocument, CaseRecord } from "../lib/case";
@@ -13,6 +14,8 @@ import {
   toggleChip,
 } from "../lib/case-ops";
 import { getCaseStore } from "../lib/case-store";
+import { saveFile } from "../lib/download";
+import { applyExport, bundleDownload, oemDownload, type ExportAction } from "../lib/export";
 import { ACCOUNTS_NOT_SET_UP } from "../lib/supabase/env";
 import { useAccount } from "./AccountProvider";
 import { SignInPrompt } from "./SignInPrompt";
@@ -108,6 +111,7 @@ function CaseHeader({
 
 // One case: Data, Activity, Algorithm, Score. Saved to the signed-in account.
 export function CaseScreen({ id }: { id: string }) {
+  const router = useRouter();
   const account = useAccount();
   const userId = account.status === "signed-in" ? account.userId : null;
   const [state, setState] = useState<LoadState>({ status: "loading" });
@@ -202,6 +206,25 @@ export function CaseScreen({ id }: { id: string }) {
     }
   }
 
+  // Every export is logged first. If the log cannot be saved the file is not sent, so no export is silent.
+  // Export reads the saved case. It does not call Grok and it does not score anything.
+  async function exportCase(action: ExportAction): Promise<void> {
+    const sent: { doc: CaseDocument | null; at: string } = { doc: null, at: new Date().toISOString() };
+    const saved = await update((current) => {
+      const next = applyExport(current, action, sent.at);
+      if (next !== current) sent.doc = next;
+      return next;
+    });
+    if (!saved || sent.doc === null) return;
+
+    if (action === "testing") {
+      router.push(`/test?case=${encodeURIComponent(sent.doc.id)}`);
+      return;
+    }
+    const file = action === "oem" ? oemDownload(sent.doc) : bundleDownload(sent.doc, sent.at);
+    if (file) saveFile(file);
+  }
+
   if (account.status === "unavailable") {
     return (
       <section className="frame frame--empty" role="alert">
@@ -280,6 +303,7 @@ export function CaseScreen({ id }: { id: string }) {
           onHandEdit={async (text) => {
             await update((current) => applyHandEdit(current, text, new Date().toISOString()));
           }}
+          onExport={exportCase}
         />
         <ActivityRegion doc={doc} asking={asking} askError={askError} askResult={askResult} onAsk={ask} />
         <ScoreRegion doc={doc} />

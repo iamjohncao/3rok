@@ -345,6 +345,29 @@ body {
   color: var(--ink);
 }
 
+.case-banner {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line);
+  background: var(--surface-200);
+  overflow-wrap: anywhere;
+}
+
+.case-banner .eyebrow {
+  display: block;
+  margin-bottom: var(--space-1);
+  color: var(--ink);
+}
+
+.import-case {
+  flex-basis: 100%;
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line);
+  background: var(--surface-200);
+}
+
 .controls {
   display: grid;
   gap: var(--space-3);
