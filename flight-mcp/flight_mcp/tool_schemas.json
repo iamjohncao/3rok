@@ -1,0 +1,99 @@
+{
+  "_about": "The three flight tools, as docs/grok-flight-mcp.md defines them. flight-mcp serves these definitions, and the Next.js route sends the first two as function tools when no flight server is configured. One file, so the two sides cannot drift.",
+  "tools": [
+    {
+      "name": "validate_oem",
+      "description": "Validate a CCSDS OEM 3.0 KVN trajectory against the 3rok profile. Returns errors. Does not store the file.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "oem"
+        ],
+        "properties": {
+          "oem": {
+            "type": "string",
+            "description": "Full OEM keyword-value text, including the version header."
+          }
+        }
+      }
+    },
+    {
+      "name": "submit_oem",
+      "description": "Validate an OEM and, if it passes, hold it as the candidate trajectory for this request. Does not publish it and does not see holdout data.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "oem"
+        ],
+        "properties": {
+          "oem": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "name": "score_candidate",
+      "description": "Score one reduced LEO orbit for chip lifetime, mean power, radiator area, and shield mass. Refuses orbits outside 500–2000 km and outside inclination 30 degrees or sun-synchronous. Does not propagate a trajectory.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "altitude_km",
+          "inclination",
+          "ltan_hours",
+          "shield_mm_Al"
+        ],
+        "properties": {
+          "altitude_km": {
+            "type": "number"
+          },
+          "inclination": {
+            "description": "\"sso\" or 30.",
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "sso"
+                ]
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "ltan_hours": {
+            "type": "number"
+          },
+          "shield_mm_Al": {
+            "type": "number"
+          },
+          "chip_id": {
+            "type": "string"
+          },
+          "chip_preset": {
+            "type": "string",
+            "enum": [
+              "commercial",
+              "rad_hard"
+            ]
+          },
+          "radiator_area_m2": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "load_strategy": {
+            "type": "string",
+            "enum": [
+              "constant"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

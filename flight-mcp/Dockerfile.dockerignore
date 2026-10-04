@@ -1,0 +1,8 @@
+*
+!starmind-physics
+!flight-mcp
+**/__pycache__
+**/*.egg-info
+**/.pytest_cache
+flight-mcp/tests
+flight-mcp/vendor

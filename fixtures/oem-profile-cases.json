@@ -1,0 +1,287 @@
+{
+  "_about": "Shared OEM profile cases. lib/oem.test.ts runs them against lib/oem.ts, and flight-mcp/tests/test_oem_profile.py runs the same file against flight-mcp/flight_mcp/oem_profile.py, so the two validators cannot drift. fixtures/oem-profile-expected.json holds the exact validate_oem result for every case, written by scripts/update-oem-golden.mjs from lib/oem.ts.",
+  "_format": "Start from the lines of `base`. Each edit is applied in order. {replace, with} swaps the one line that equals `replace` exactly for `with` (use \\n for several lines, null to delete the line). {append} adds lines at the end. Then validate the result. `valid` is the expected outcome. Each string in `errors_mention` must appear in at least one error. `this_app_wrote` means the file must carry ORIGINATOR = 3ROK. `text_cases` give the whole file as `text` instead of edits to `base`. Both lists are validated with ORIGINATOR required to be 3ROK only when `this_app_wrote` is true.",
+  "base": "fixtures/minimal.oem",
+  "cases": [
+    {
+      "name": "accepts the minimal fixture",
+      "edits": [],
+      "valid": true
+    },
+    {
+      "name": "accepts another ORIGINATOR on a file this app did not write",
+      "edits": [{ "replace": "ORIGINATOR = 3ROK", "with": "ORIGINATOR = NASA/JPL" }],
+      "valid": true
+    },
+    {
+      "name": "refuses an ORIGINATOR other than 3ROK on a file this app writes",
+      "this_app_wrote": true,
+      "edits": [{ "replace": "ORIGINATOR = 3ROK", "with": "ORIGINATOR = NASA/JPL" }],
+      "valid": false,
+      "errors_mention": ["ORIGINATOR", "3ROK"]
+    },
+    {
+      "name": "refuses a wrong REF_FRAME",
+      "edits": [{ "replace": "REF_FRAME = GCRF", "with": "REF_FRAME = EME2000" }],
+      "valid": false,
+      "errors_mention": ["REF_FRAME", "GCRF"]
+    },
+    {
+      "name": "refuses a wrong CENTER_NAME",
+      "edits": [{ "replace": "CENTER_NAME = EARTH", "with": "CENTER_NAME = MOON" }],
+      "valid": false,
+      "errors_mention": ["CENTER_NAME", "EARTH"]
+    },
+    {
+      "name": "refuses a wrong TIME_SYSTEM",
+      "edits": [{ "replace": "TIME_SYSTEM = UTC", "with": "TIME_SYSTEM = TAI" }],
+      "valid": false,
+      "errors_mention": ["TIME_SYSTEM", "UTC"]
+    },
+    {
+      "name": "refuses a file with fewer than two states",
+      "edits": [
+        { "replace": "2026-10-03T18:20:00.000  -2120.0  -2440.0  6205.0  -3.10  6.55  2.40", "with": null },
+        { "replace": "STOP_TIME = 2026-10-03T18:20:00.000", "with": "STOP_TIME = 2026-10-03T18:05:00.000" }
+      ],
+      "valid": false,
+      "errors_mention": ["at least two"]
+    },
+    {
+      "name": "refuses acceleration on some lines of a segment only",
+      "edits": [
+        {
+          "replace": "2026-10-03T18:05:00.000  -1045.0  -5512.0  3298.0  -1.20  3.40  6.10",
+          "with": "2026-10-03T18:05:00.000  -1045.0  -5512.0  3298.0  -1.20  3.40  6.10  0.001  0.002  0.003"
+        }
+      ],
+      "valid": false,
+      "errors_mention": ["Acceleration", "every state line"]
+    },
+    {
+      "name": "accepts acceleration on every line of a segment",
+      "edits": [
+        {
+          "replace": "2026-10-03T18:05:00.000  -1045.0  -5512.0  3298.0  -1.20  3.40  6.10",
+          "with": "2026-10-03T18:05:00.000  -1045.0  -5512.0  3298.0  -1.20  3.40  6.10  0.001  0.002  0.003"
+        },
+        {
+          "replace": "2026-10-03T18:20:00.000  -2120.0  -2440.0  6205.0  -3.10  6.55  2.40",
+          "with": "2026-10-03T18:20:00.000  -2120.0  -2440.0  6205.0  -3.10  6.55  2.40  0.001  0.002  0.003"
+        }
+      ],
+      "valid": true
+    },
+    {
+      "name": "refuses a time that goes backwards inside a segment",
+      "edits": [
+        { "replace": "STOP_TIME = 2026-10-03T18:20:00.000", "with": "STOP_TIME = 2026-10-03T18:10:00.000" },
+        { "append": "2026-10-03T18:10:00.000  -1500.0  -4000.0  4500.0  -2.00  5.00  4.00" }
+      ],
+      "valid": false,
+      "errors_mention": ["must increase"]
+    },
+    {
+      "name": "refuses INTERPOLATION without INTERPOLATION_DEGREE",
+      "edits": [
+        {
+          "replace": "STOP_TIME = 2026-10-03T18:20:00.000",
+          "with": "STOP_TIME = 2026-10-03T18:20:00.000\nINTERPOLATION = LINEAR"
+        }
+      ],
+      "valid": false,
+      "errors_mention": ["INTERPOLATION_DEGREE"]
+    },
+    {
+      "name": "accepts INTERPOLATION with INTERPOLATION_DEGREE",
+      "edits": [
+        {
+          "replace": "STOP_TIME = 2026-10-03T18:20:00.000",
+          "with": "STOP_TIME = 2026-10-03T18:20:00.000\nINTERPOLATION = LINEAR\nINTERPOLATION_DEGREE = 1"
+        }
+      ],
+      "valid": true
+    },
+    {
+      "name": "refuses REF_FRAME_EPOCH on GCRF",
+      "edits": [
+        {
+          "replace": "REF_FRAME = GCRF",
+          "with": "REF_FRAME = GCRF\nREF_FRAME_EPOCH = 2000-01-01T12:00:00"
+        }
+      ],
+      "valid": false,
+      "errors_mention": ["REF_FRAME_EPOCH"]
+    },
+    {
+      "name": "accepts a second segment after a discontinuity",
+      "edits": [
+        {
+          "append": "META_START\nOBJECT_NAME = CASE-CHIPSET\nOBJECT_ID = UNKNOWN\nCENTER_NAME = EARTH\nREF_FRAME = GCRF\nTIME_SYSTEM = UTC\nSTART_TIME = 2026-10-03T18:25:00.000\nSTOP_TIME = 2026-10-03T18:30:00.000\nMETA_STOP\n2026-10-03T18:25:00.000  -3000.0  -1500.0  6300.0  -3.50  6.80  1.90\n2026-10-03T18:30:00.000  -3500.0  -500.0  6350.0  -3.60  6.90  1.20"
+        }
+      ],
+      "valid": true
+    },
+    {
+      "name": "refuses TIME_SYSTEM other than UTC in a later segment",
+      "edits": [
+        {
+          "append": "META_START\nOBJECT_NAME = CASE-CHIPSET\nOBJECT_ID = UNKNOWN\nCENTER_NAME = EARTH\nREF_FRAME = GCRF\nTIME_SYSTEM = TAI\nSTART_TIME = 2026-10-03T18:25:00.000\nSTOP_TIME = 2026-10-03T18:30:00.000\nMETA_STOP\n2026-10-03T18:25:00.000  -3000.0  -1500.0  6300.0  -3.50  6.80  1.90\n2026-10-03T18:30:00.000  -3500.0  -500.0  6350.0  -3.60  6.90  1.20"
+        }
+      ],
+      "valid": false,
+      "errors_mention": ["TIME_SYSTEM", "segment 2"]
+    },
+    {
+      "name": "refuses a START_TIME that is not the first epoch",
+      "edits": [{ "replace": "START_TIME = 2026-10-03T18:05:00.000", "with": "START_TIME = 2026-10-03T18:04:00.000" }],
+      "valid": false,
+      "errors_mention": ["START_TIME", "first"]
+    },
+    {
+      "name": "refuses a STOP_TIME that is not the last epoch",
+      "edits": [{ "replace": "STOP_TIME = 2026-10-03T18:20:00.000", "with": "STOP_TIME = 2026-10-03T18:21:00.000" }],
+      "valid": false,
+      "errors_mention": ["STOP_TIME", "last"]
+    },
+    {
+      "name": "refuses header keywords out of order",
+      "edits": [
+        { "replace": "ORIGINATOR = 3ROK", "with": null },
+        {
+          "replace": "CREATION_DATE = 2026-10-03T18:00:00",
+          "with": "ORIGINATOR = 3ROK\nCREATION_DATE = 2026-10-03T18:00:00"
+        }
+      ],
+      "valid": false,
+      "errors_mention": ["out of order"]
+    },
+    {
+      "name": "refuses metadata keywords out of order",
+      "edits": [
+        { "replace": "OBJECT_ID = UNKNOWN", "with": null },
+        { "replace": "CENTER_NAME = EARTH", "with": "CENTER_NAME = EARTH\nOBJECT_ID = UNKNOWN" }
+      ],
+      "valid": false,
+      "errors_mention": ["OBJECT_ID", "out of order"]
+    },
+    {
+      "name": "refuses a missing required metadata keyword",
+      "edits": [{ "replace": "OBJECT_NAME = CASE-CHIPSET", "with": null }],
+      "valid": false,
+      "errors_mention": ["OBJECT_NAME", "required"]
+    },
+    {
+      "name": "refuses a missing META_STOP",
+      "edits": [{ "replace": "META_STOP", "with": null }],
+      "valid": false,
+      "errors_mention": ["META_STOP"]
+    },
+    {
+      "name": "refuses a wrong CCSDS_OEM_VERS",
+      "edits": [{ "replace": "CCSDS_OEM_VERS = 3.0", "with": "CCSDS_OEM_VERS = 2.0" }],
+      "valid": false,
+      "errors_mention": ["CCSDS_OEM_VERS", "3.0"]
+    },
+    {
+      "name": "refuses a covariance block",
+      "edits": [
+        {
+          "append": "COVARIANCE_START\nEPOCH = 2026-10-03T18:05:00.000\n1.0\nCOVARIANCE_STOP"
+        }
+      ],
+      "valid": false,
+      "errors_mention": ["COVARIANCE"]
+    },
+    {
+      "name": "refuses a token that is not a number",
+      "edits": [
+        {
+          "replace": "2026-10-03T18:05:00.000  -1045.0  -5512.0  3298.0  -1.20  3.40  6.10",
+          "with": "2026-10-03T18:05:00.000  -1045.0  abc  3298.0  -1.20  3.40  6.10"
+        }
+      ],
+      "valid": false,
+      "errors_mention": ["abc", "not a number"]
+    },
+    {
+      "name": "refuses a state line with the wrong number of values",
+      "edits": [
+        {
+          "replace": "2026-10-03T18:05:00.000  -1045.0  -5512.0  3298.0  -1.20  3.40  6.10",
+          "with": "2026-10-03T18:05:00.000  -1045.0  -5512.0  3298.0  -1.20  3.40"
+        }
+      ],
+      "valid": false,
+      "errors_mention": ["6 numbers"]
+    },
+    {
+      "name": "refuses an impossible calendar date",
+      "edits": [
+        { "replace": "START_TIME = 2026-10-03T18:05:00.000", "with": "START_TIME = 2026-02-30T18:05:00.000" }
+      ],
+      "valid": false,
+      "errors_mention": ["START_TIME"]
+    },
+    {
+      "name": "refuses a COMMENT in the middle of the header",
+      "edits": [
+        {
+          "replace": "CREATION_DATE = 2026-10-03T18:00:00",
+          "with": "CREATION_DATE = 2026-10-03T18:00:00\nCOMMENT too late"
+        }
+      ],
+      "valid": false,
+      "errors_mention": ["COMMENT", "directly after CCSDS_OEM_VERS"]
+    },
+    {"name": "accepts day-of-year epochs", "edits": [{"replace": "START_TIME = 2026-10-03T18:05:00.000", "with": "START_TIME = 2026-276T18:05:00.000"}, {"replace": "2026-10-03T18:05:00.000  -1045.0  -5512.0  3298.0  -1.20  3.40  6.10", "with": "2026-276T18:05:00.000  -1045.0  -5512.0  3298.0  -1.20  3.40  6.10"}], "valid": true},
+    {"name": "accepts epochs that end in Z", "edits": [{"replace": "START_TIME = 2026-10-03T18:05:00.000", "with": "START_TIME = 2026-10-03T18:05:00.000Z"}, {"replace": "2026-10-03T18:05:00.000  -1045.0  -5512.0  3298.0  -1.20  3.40  6.10", "with": "2026-10-03T18:05:00.000Z  -1045.0  -5512.0  3298.0  -1.20  3.40  6.10"}], "valid": true},
+    {"name": "accepts 29 February in a leap year", "edits": [{"replace": "CREATION_DATE = 2026-10-03T18:00:00", "with": "CREATION_DATE = 2028-02-29T00:00:00"}], "valid": true},
+    {"name": "refuses 29 February in a year that is not a leap year", "edits": [{"replace": "CREATION_DATE = 2026-10-03T18:00:00", "with": "CREATION_DATE = 2026-02-29T00:00:00"}], "valid": false, "errors_mention": ["CREATION_DATE"]},
+    {"name": "accepts day 366 in a leap year", "edits": [{"replace": "CREATION_DATE = 2026-10-03T18:00:00", "with": "CREATION_DATE = 2028-366T00:00:00"}], "valid": true},
+    {"name": "refuses day 366 in a year that is not a leap year", "edits": [{"replace": "CREATION_DATE = 2026-10-03T18:00:00", "with": "CREATION_DATE = 2026-366T00:00:00"}], "valid": false, "errors_mention": ["CREATION_DATE"]},
+    {"name": "refuses day 000 of the year", "edits": [{"replace": "CREATION_DATE = 2026-10-03T18:00:00", "with": "CREATION_DATE = 2026-000T00:00:00"}], "valid": false, "errors_mention": ["CREATION_DATE"]},
+    {"name": "refuses month 13", "edits": [{"replace": "CREATION_DATE = 2026-10-03T18:00:00", "with": "CREATION_DATE = 2026-13-01T00:00:00"}], "valid": false, "errors_mention": ["CREATION_DATE"]},
+    {"name": "refuses hour 24", "edits": [{"replace": "CREATION_DATE = 2026-10-03T18:00:00", "with": "CREATION_DATE = 2026-10-03T24:00:00"}], "valid": false, "errors_mention": ["CREATION_DATE"]},
+    {"name": "refuses a leap second", "edits": [{"replace": "STOP_TIME = 2026-10-03T18:20:00.000", "with": "STOP_TIME = 2026-10-03T18:20:60.000"}, {"replace": "2026-10-03T18:20:00.000  -2120.0  -2440.0  6205.0  -3.10  6.55  2.40", "with": "2026-10-03T18:20:60.000  -2120.0  -2440.0  6205.0  -3.10  6.55  2.40"}], "valid": false, "errors_mention": ["not a valid UTC epoch"]},
+    {"name": "accepts fractional seconds of any length", "edits": [{"replace": "CREATION_DATE = 2026-10-03T18:00:00", "with": "CREATION_DATE = 2026-10-03T18:00:00.123456789"}], "valid": true},
+    {"name": "refuses a time of day with no seconds", "edits": [{"replace": "CREATION_DATE = 2026-10-03T18:00:00", "with": "CREATION_DATE = 2026-10-03T18:00"}], "valid": false, "errors_mention": ["CREATION_DATE"]},
+    {"name": "accepts a state line whose values are separated by tabs", "edits": [{"replace": "2026-10-03T18:20:00.000  -2120.0  -2440.0  6205.0  -3.10  6.55  2.40", "with": "2026-10-03T18:20:00.000\t-2120.0\t-2440.0\t6205.0\t-3.10\t6.55\t2.40"}], "valid": true},
+    {"name": "accepts exponent notation in a state line", "edits": [{"replace": "2026-10-03T18:20:00.000  -2120.0  -2440.0  6205.0  -3.10  6.55  2.40", "with": "2026-10-03T18:20:00.000  -2120.0  -2.44e3  6205.0  -3.1E+0  6.55  2.40"}], "valid": true},
+    {"name": "refuses a number too large to hold", "edits": [{"replace": "2026-10-03T18:20:00.000  -2120.0  -2440.0  6205.0  -3.10  6.55  2.40", "with": "2026-10-03T18:20:00.000  -2120.0  -2440.0  6205.0  1e999  6.55  2.40"}], "valid": false, "errors_mention": ["1e999", "not a number"]},
+    {"name": "refuses a number with a stray character", "edits": [{"replace": "2026-10-03T18:20:00.000  -2120.0  -2440.0  6205.0  -3.10  6.55  2.40", "with": "2026-10-03T18:20:00.000  -2120.0  -2440.0  6205.0  -3.1.0  6.55  2.40"}], "valid": false, "errors_mention": ["not a number"]},
+    {"name": "refuses an empty OBJECT_NAME", "edits": [{"replace": "OBJECT_NAME = CASE-CHIPSET", "with": "OBJECT_NAME ="}], "valid": false, "errors_mention": ["OBJECT_NAME", "must not be empty"]},
+    {"name": "refuses a lowercase keyword", "edits": [{"replace": "OBJECT_ID = UNKNOWN", "with": "object_id = UNKNOWN"}], "valid": false, "errors_mention": ["not a KEYWORD = value line"]},
+    {"name": "refuses a header keyword that appears twice", "edits": [{"replace": "ORIGINATOR = 3ROK", "with": "ORIGINATOR = 3ROK\nORIGINATOR = 3ROK"}], "valid": false, "errors_mention": ["ORIGINATOR", "more than once"]},
+    {"name": "refuses a metadata keyword in the header", "edits": [{"replace": "CREATION_DATE = 2026-10-03T18:00:00", "with": "CREATION_DATE = 2026-10-03T18:00:00\nOBJECT_NAME = X"}], "valid": false, "errors_mention": ["OBJECT_NAME", "belongs between META_START and META_STOP"]},
+    {"name": "refuses a header keyword inside the metadata block", "edits": [{"replace": "OBJECT_ID = UNKNOWN", "with": "OBJECT_ID = UNKNOWN\nMESSAGE_ID = X"}], "valid": false, "errors_mention": ["MESSAGE_ID", "not an OEM metadata keyword"]},
+    {"name": "refuses a COMMENT between metadata keywords", "edits": [{"replace": "OBJECT_ID = UNKNOWN", "with": "OBJECT_ID = UNKNOWN\nCOMMENT too late"}], "valid": false, "errors_mention": ["COMMENT", "directly after META_START"]},
+    {"name": "accepts a COMMENT directly after META_START", "edits": [{"replace": "META_START", "with": "META_START\nCOMMENT the case"}], "valid": true},
+    {"name": "refuses a COMMENT after the first state line", "edits": [{"replace": "2026-10-03T18:05:00.000  -1045.0  -5512.0  3298.0  -1.20  3.40  6.10", "with": "2026-10-03T18:05:00.000  -1045.0  -5512.0  3298.0  -1.20  3.40  6.10\nCOMMENT too late"}], "valid": false, "errors_mention": ["COMMENT", "before the first state line"]},
+    {"name": "refuses USEABLE_START_TIME before START_TIME", "edits": [{"replace": "STOP_TIME = 2026-10-03T18:20:00.000", "with": "USEABLE_START_TIME = 2026-10-03T18:00:00.000\nSTOP_TIME = 2026-10-03T18:20:00.000"}], "valid": false, "errors_mention": ["USEABLE_START_TIME", "between START_TIME and STOP_TIME"]},
+    {"name": "refuses USEABLE_START_TIME after USEABLE_STOP_TIME", "edits": [{"replace": "STOP_TIME = 2026-10-03T18:20:00.000", "with": "USEABLE_START_TIME = 2026-10-03T18:15:00.000\nUSEABLE_STOP_TIME = 2026-10-03T18:10:00.000\nSTOP_TIME = 2026-10-03T18:20:00.000"}], "valid": false, "errors_mention": ["must not be later"]},
+    {"name": "refuses an INTERPOLATION_DEGREE of 0", "edits": [{"replace": "STOP_TIME = 2026-10-03T18:20:00.000", "with": "STOP_TIME = 2026-10-03T18:20:00.000\nINTERPOLATION = LINEAR\nINTERPOLATION_DEGREE = 0"}], "valid": false, "errors_mention": ["INTERPOLATION_DEGREE", "whole number"]},
+    {"name": "refuses a state line with only an epoch", "edits": [{"append": "2026-10-03T18:25:00.000"}], "valid": false, "errors_mention": ["has 0"]},
+    {"name": "refuses an epoch that is not a time", "edits": [{"replace": "2026-10-03T18:20:00.000  -2120.0  -2440.0  6205.0  -3.10  6.55  2.40", "with": "yesterday  -2120.0  -2440.0  6205.0  -3.10  6.55  2.40"}], "valid": false, "errors_mention": ["yesterday", "not a valid UTC epoch"]},
+    {"name": "refuses a second segment with no states", "edits": [{"append": "META_START\nOBJECT_NAME = B\nOBJECT_ID = UNKNOWN\nCENTER_NAME = EARTH\nREF_FRAME = GCRF\nTIME_SYSTEM = UTC\nSTART_TIME = 2026-10-03T18:30:00.000\nSTOP_TIME = 2026-10-03T18:40:00.000\nMETA_STOP"}], "valid": false, "errors_mention": ["no state lines", "segment 2"]},
+    {"name": "refuses a META_START that never closes", "edits": [{"append": "META_START\nOBJECT_NAME = B"}], "valid": false, "errors_mention": ["never reaches META_STOP", "segment 2"]}
+  ],
+  "text_cases": [
+    {"name": "refuses an empty file", "text": "", "valid": false, "errors_mention": ["The file is empty"]},
+    {"name": "refuses a file of only blank lines", "text": "\n  \n\t\n", "valid": false, "errors_mention": ["The file is empty"]},
+    {"name": "refuses a file with a header and no META_START", "text": "CCSDS_OEM_VERS = 3.0\nCREATION_DATE = 2026-10-03T18:00:00\nORIGINATOR = 3ROK\n", "valid": false, "errors_mention": ["no META_START"]},
+    {"name": "accepts Windows line endings", "text": "CCSDS_OEM_VERS = 3.0\r\nCOMMENT 3ROK fixture. The numbers show the file shape only. This is not a flyable trajectory.\r\nCREATION_DATE = 2026-10-03T18:00:00\r\nORIGINATOR = 3ROK\r\nMETA_START\r\nOBJECT_NAME = CASE-CHIPSET\r\nOBJECT_ID = UNKNOWN\r\nCENTER_NAME = EARTH\r\nREF_FRAME = GCRF\r\nTIME_SYSTEM = UTC\r\nSTART_TIME = 2026-10-03T18:05:00.000\r\nSTOP_TIME = 2026-10-03T18:20:00.000\r\nMETA_STOP\r\n2026-10-03T18:05:00.000  -1045.0  -5512.0  3298.0  -1.20  3.40  6.10\r\n2026-10-03T18:20:00.000  -2120.0  -2440.0  6205.0  -3.10  6.55  2.40\r\n", "valid": true},
+    {"name": "accepts a byte-order mark before the file", "text": "\ufeffCCSDS_OEM_VERS = 3.0\nCOMMENT 3ROK fixture. The numbers show the file shape only. This is not a flyable trajectory.\nCREATION_DATE = 2026-10-03T18:00:00\nORIGINATOR = 3ROK\nMETA_START\nOBJECT_NAME = CASE-CHIPSET\nOBJECT_ID = UNKNOWN\nCENTER_NAME = EARTH\nREF_FRAME = GCRF\nTIME_SYSTEM = UTC\nSTART_TIME = 2026-10-03T18:05:00.000\nSTOP_TIME = 2026-10-03T18:20:00.000\nMETA_STOP\n2026-10-03T18:05:00.000  -1045.0  -5512.0  3298.0  -1.20  3.40  6.10\n2026-10-03T18:20:00.000  -2120.0  -2440.0  6205.0  -3.10  6.55  2.40\n", "valid": true},
+    {"name": "accepts a file with no final newline", "text": "CCSDS_OEM_VERS = 3.0\nCOMMENT 3ROK fixture. The numbers show the file shape only. This is not a flyable trajectory.\nCREATION_DATE = 2026-10-03T18:00:00\nORIGINATOR = 3ROK\nMETA_START\nOBJECT_NAME = CASE-CHIPSET\nOBJECT_ID = UNKNOWN\nCENTER_NAME = EARTH\nREF_FRAME = GCRF\nTIME_SYSTEM = UTC\nSTART_TIME = 2026-10-03T18:05:00.000\nSTOP_TIME = 2026-10-03T18:20:00.000\nMETA_STOP\n2026-10-03T18:05:00.000  -1045.0  -5512.0  3298.0  -1.20  3.40  6.10\n2026-10-03T18:20:00.000  -2120.0  -2440.0  6205.0  -3.10  6.55  2.40", "valid": true},
+    {"name": "accepts blank lines and indentation", "text": "\n  CCSDS_OEM_VERS = 3.0\n\n   COMMENT 3ROK fixture. The numbers show the file shape only. This is not a flyable trajectory.\n\n   CREATION_DATE = 2026-10-03T18:00:00\n\n   ORIGINATOR = 3ROK\n\n   META_START\n\n   OBJECT_NAME = CASE-CHIPSET\n\n   OBJECT_ID = UNKNOWN\n\n   CENTER_NAME = EARTH\n\n   REF_FRAME = GCRF\n\n   TIME_SYSTEM = UTC\n\n   START_TIME = 2026-10-03T18:05:00.000\n\n   STOP_TIME = 2026-10-03T18:20:00.000\n\n   META_STOP\n\n   2026-10-03T18:05:00.000  -1045.0  -5512.0  3298.0  -1.20  3.40  6.10\n\n   2026-10-03T18:20:00.000  -2120.0  -2440.0  6205.0  -3.10  6.55  2.40\n\n   ", "valid": true},
+    {"name": "accepts a no-break space between the values of a state line", "text": "CCSDS_OEM_VERS = 3.0\nCOMMENT 3ROK fixture. The numbers show the file shape only. This is not a flyable trajectory.\nCREATION_DATE = 2026-10-03T18:00:00\nORIGINATOR = 3ROK\nMETA_START\nOBJECT_NAME = CASE-CHIPSET\nOBJECT_ID = UNKNOWN\nCENTER_NAME = EARTH\nREF_FRAME = GCRF\nTIME_SYSTEM = UTC\nSTART_TIME = 2026-10-03T18:05:00.000\nSTOP_TIME = 2026-10-03T18:20:00.000\nMETA_STOP\n2026-10-03T18:05:00.000  -1045.0  -5512.0  3298.0  -1.20  3.40  6.10\n2026-10-03T18:20:00.000\u00a0-2120.0\u00a0-2440.0\u00a06205.0\u00a0-3.10\u00a06.55\u00a02.40\n", "valid": true},
+    {"name": "accepts a form feed between the values of a state line", "text": "CCSDS_OEM_VERS = 3.0\nCOMMENT 3ROK fixture. The numbers show the file shape only. This is not a flyable trajectory.\nCREATION_DATE = 2026-10-03T18:00:00\nORIGINATOR = 3ROK\nMETA_START\nOBJECT_NAME = CASE-CHIPSET\nOBJECT_ID = UNKNOWN\nCENTER_NAME = EARTH\nREF_FRAME = GCRF\nTIME_SYSTEM = UTC\nSTART_TIME = 2026-10-03T18:05:00.000\nSTOP_TIME = 2026-10-03T18:20:00.000\nMETA_STOP\n2026-10-03T18:05:00.000  -1045.0  -5512.0  3298.0  -1.20  3.40  6.10\n2026-10-03T18:20:00.000\f-2120.0\f-2440.0\f6205.0\f-3.10\f6.55\f2.40\n", "valid": true},
+    {"name": "refuses a state line that uses the next-line control character as a separator", "text": "CCSDS_OEM_VERS = 3.0\nCOMMENT 3ROK fixture. The numbers show the file shape only. This is not a flyable trajectory.\nCREATION_DATE = 2026-10-03T18:00:00\nORIGINATOR = 3ROK\nMETA_START\nOBJECT_NAME = CASE-CHIPSET\nOBJECT_ID = UNKNOWN\nCENTER_NAME = EARTH\nREF_FRAME = GCRF\nTIME_SYSTEM = UTC\nSTART_TIME = 2026-10-03T18:05:00.000\nSTOP_TIME = 2026-10-03T18:20:00.000\nMETA_STOP\n2026-10-03T18:05:00.000  -1045.0  -5512.0  3298.0  -1.20  3.40  6.10\n2026-10-03T18:20:00.000\u0085-2120.0\u0085-2440.0\u00856205.0\u0085-3.10\u00856.55\u00852.40\n", "valid": false, "errors_mention": ["state line holds"]},
+    {"name": "refuses a lone carriage return inside a line", "text": "CCSDS_OEM_VERS = 3.0\nCOMMENT 3ROK fixture. The numbers show the file shape only. This is not a flyable trajectory.\nCREATION_DATE = 2026-10-03T18:00:00\nORIGINATOR = 3ROK\rX\nMETA_START\nOBJECT_NAME = CASE-CHIPSET\nOBJECT_ID = UNKNOWN\nCENTER_NAME = EARTH\nREF_FRAME = GCRF\nTIME_SYSTEM = UTC\nSTART_TIME = 2026-10-03T18:05:00.000\nSTOP_TIME = 2026-10-03T18:20:00.000\nMETA_STOP\n2026-10-03T18:05:00.000  -1045.0  -5512.0  3298.0  -1.20  3.40  6.10\n2026-10-03T18:20:00.000  -2120.0  -2440.0  6205.0  -3.10  6.55  2.40\n", "valid": false, "errors_mention": ["not a KEYWORD = value line"]},
+    {"name": "refuses a line separator inside a line", "text": "CCSDS_OEM_VERS = 3.0\nCOMMENT 3ROK fixture. The numbers show the file shape only. This is not a flyable trajectory.\nCREATION_DATE = 2026-10-03T18:00:00\nORIGINATOR = 3ROK\u2028X\nMETA_START\nOBJECT_NAME = CASE-CHIPSET\nOBJECT_ID = UNKNOWN\nCENTER_NAME = EARTH\nREF_FRAME = GCRF\nTIME_SYSTEM = UTC\nSTART_TIME = 2026-10-03T18:05:00.000\nSTOP_TIME = 2026-10-03T18:20:00.000\nMETA_STOP\n2026-10-03T18:05:00.000  -1045.0  -5512.0  3298.0  -1.20  3.40  6.10\n2026-10-03T18:20:00.000  -2120.0  -2440.0  6205.0  -3.10  6.55  2.40\n", "valid": false, "errors_mention": ["not a KEYWORD = value line"]},
+    {"name": "refuses an epoch written in non-ASCII digits", "text": "CCSDS_OEM_VERS = 3.0\nCOMMENT 3ROK fixture. The numbers show the file shape only. This is not a flyable trajectory.\nCREATION_DATE = \u0662\u0660\u0662\u0666-10-03T18:00:00\nORIGINATOR = 3ROK\nMETA_START\nOBJECT_NAME = CASE-CHIPSET\nOBJECT_ID = UNKNOWN\nCENTER_NAME = EARTH\nREF_FRAME = GCRF\nTIME_SYSTEM = UTC\nSTART_TIME = 2026-10-03T18:05:00.000\nSTOP_TIME = 2026-10-03T18:20:00.000\nMETA_STOP\n2026-10-03T18:05:00.000  -1045.0  -5512.0  3298.0  -1.20  3.40  6.10\n2026-10-03T18:20:00.000  -2120.0  -2440.0  6205.0  -3.10  6.55  2.40\n", "valid": false, "errors_mention": ["CREATION_DATE"]},
+    {"name": "refuses a number written in non-ASCII digits", "text": "CCSDS_OEM_VERS = 3.0\nCOMMENT 3ROK fixture. The numbers show the file shape only. This is not a flyable trajectory.\nCREATION_DATE = 2026-10-03T18:00:00\nORIGINATOR = 3ROK\nMETA_START\nOBJECT_NAME = CASE-CHIPSET\nOBJECT_ID = UNKNOWN\nCENTER_NAME = EARTH\nREF_FRAME = GCRF\nTIME_SYSTEM = UTC\nSTART_TIME = 2026-10-03T18:05:00.000\nSTOP_TIME = 2026-10-03T18:20:00.000\nMETA_STOP\n2026-10-03T18:05:00.000  -1045.0  -5512.0  3298.0  -1.20  3.40  6.10\n2026-10-03T18:20:00.000  -2120.0  -2440.0  6205.0  \u0663  6.55  2.40\n", "valid": false, "errors_mention": ["not a number"]},
+    {"name": "refuses text that is not an OEM", "text": "Sure! Here is a trajectory for you.", "valid": false, "errors_mention": ["CCSDS_OEM_VERS"]},
+    {"name": "refuses a chat reply that wraps an OEM", "text": "Here you go:\n\nCCSDS_OEM_VERS = 3.0\nCOMMENT 3ROK fixture. The numbers show the file shape only. This is not a flyable trajectory.\nCREATION_DATE = 2026-10-03T18:00:00\nORIGINATOR = 3ROK\nMETA_START\nOBJECT_NAME = CASE-CHIPSET\nOBJECT_ID = UNKNOWN\nCENTER_NAME = EARTH\nREF_FRAME = GCRF\nTIME_SYSTEM = UTC\nSTART_TIME = 2026-10-03T18:05:00.000\nSTOP_TIME = 2026-10-03T18:20:00.000\nMETA_STOP\n2026-10-03T18:05:00.000  -1045.0  -5512.0  3298.0  -1.20  3.40  6.10\n2026-10-03T18:20:00.000  -2120.0  -2440.0  6205.0  -3.10  6.55  2.40\n\nLet me know.", "valid": false}
+  ]
+}

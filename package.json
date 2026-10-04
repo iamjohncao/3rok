@@ -1,0 +1,36 @@
+{
+  "name": "3rok",
+  "version": "0.1.0",
+  "private": true,
+  "description": "3rok: chip-test data in, a CCSDS OEM flight file out, flown on a globe.",
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "predev": "node scripts/copy-cesium.mjs",
+    "dev": "next dev",
+    "prebuild": "node scripts/copy-cesium.mjs",
+    "build": "next build",
+    "start": "next start",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.117.2",
+    "cesium": "^1.146.0",
+    "next": "16.3.8",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "read-excel-file": "^9.3.10"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "fake-indexeddb": "^6.2.5",
+    "fflate": "^0.8.3",
+    "typescript": "~5.9.3",
+    "vitest": "^5.0.3"
+  }
+}

@@ -1,0 +1,805 @@
+{
+  "_about": "The exact validate_oem result of lib/oem.ts for every case in oem-profile-cases.json, keyed by case name. Written by scripts/update-oem-golden.mjs. Do not edit by hand.",
+  "expected": {
+    "accepts the minimal fixture": {
+      "valid": true,
+      "errors": [],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "accepts another ORIGINATOR on a file this app did not write": {
+      "valid": true,
+      "errors": [],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses an ORIGINATOR other than 3ROK on a file this app writes": {
+      "valid": false,
+      "errors": [
+        "Line 4: ORIGINATOR must be 3ROK on a file this app writes, but this file says NASA/JPL. Do not use another agency's name."
+      ],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses a wrong REF_FRAME": {
+      "valid": false,
+      "errors": [
+        "Line 9: REF_FRAME must be GCRF, but this file says EME2000 (segment 1)."
+      ],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses a wrong CENTER_NAME": {
+      "valid": false,
+      "errors": [
+        "Line 8: CENTER_NAME must be EARTH, but this file says MOON (segment 1)."
+      ],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses a wrong TIME_SYSTEM": {
+      "valid": false,
+      "errors": [
+        "Line 10: TIME_SYSTEM must be UTC, but this file says TAI (segment 1)."
+      ],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses a file with fewer than two states": {
+      "valid": false,
+      "errors": [
+        "An OEM needs at least two state lines so the path has a start and an end, but this file has 1."
+      ],
+      "segment_count": 1,
+      "state_count": 1,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:05:00.000",
+      "has_acceleration": false
+    },
+    "refuses acceleration on some lines of a segment only": {
+      "valid": false,
+      "errors": [
+        "Line 15: Acceleration must be on every state line of a segment or on none, but line 14 has it and line 15 does not (segment 1)."
+      ],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": true
+    },
+    "accepts acceleration on every line of a segment": {
+      "valid": true,
+      "errors": [],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": true
+    },
+    "refuses a time that goes backwards inside a segment": {
+      "valid": false,
+      "errors": [
+        "Line 16: Epochs in a segment must increase, but 2026-10-03T18:10:00.000 on line 16 is not later than 2026-10-03T18:20:00.000 on line 15 (segment 1)."
+      ],
+      "segment_count": 1,
+      "state_count": 3,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:10:00.000",
+      "has_acceleration": false
+    },
+    "refuses INTERPOLATION without INTERPOLATION_DEGREE": {
+      "valid": false,
+      "errors": [
+        "Line 5: INTERPOLATION_DEGREE is required when INTERPOLATION is present (segment 1)."
+      ],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "accepts INTERPOLATION with INTERPOLATION_DEGREE": {
+      "valid": true,
+      "errors": [],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses REF_FRAME_EPOCH on GCRF": {
+      "valid": false,
+      "errors": [
+        "Line 10: REF_FRAME_EPOCH must be omitted. REF_FRAME is GCRF, which has a fixed definition and takes no epoch (segment 1)."
+      ],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "accepts a second segment after a discontinuity": {
+      "valid": true,
+      "errors": [],
+      "segment_count": 2,
+      "state_count": 4,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:30:00.000",
+      "has_acceleration": false
+    },
+    "refuses TIME_SYSTEM other than UTC in a later segment": {
+      "valid": false,
+      "errors": [
+        "Line 21: TIME_SYSTEM must be UTC, but this file says TAI (segment 2)."
+      ],
+      "segment_count": 2,
+      "state_count": 4,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:30:00.000",
+      "has_acceleration": false
+    },
+    "refuses a START_TIME that is not the first epoch": {
+      "valid": false,
+      "errors": [
+        "Line 5: START_TIME must match the first state's epoch, but START_TIME is 2026-10-03T18:04:00.000 and the first state is at 2026-10-03T18:05:00.000 (segment 1)."
+      ],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:04:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses a STOP_TIME that is not the last epoch": {
+      "valid": false,
+      "errors": [
+        "Line 5: STOP_TIME must match the last state's epoch, but STOP_TIME is 2026-10-03T18:21:00.000 and the last state is at 2026-10-03T18:20:00.000 (segment 1)."
+      ],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:21:00.000",
+      "has_acceleration": false
+    },
+    "refuses header keywords out of order": {
+      "valid": false,
+      "errors": [
+        "Line 4: CREATION_DATE is out of order. Header keywords go in this order: CCSDS_OEM_VERS, CLASSIFICATION, CREATION_DATE, ORIGINATOR, MESSAGE_ID."
+      ],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses metadata keywords out of order": {
+      "valid": false,
+      "errors": [
+        "Line 8: OBJECT_ID is out of order. Metadata keywords go in this order: OBJECT_NAME, OBJECT_ID, CENTER_NAME, REF_FRAME, REF_FRAME_EPOCH, TIME_SYSTEM, START_TIME, USEABLE_START_TIME, USEABLE_STOP_TIME, STOP_TIME, INTERPOLATION, INTERPOLATION_DEGREE (segment 1)."
+      ],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses a missing required metadata keyword": {
+      "valid": false,
+      "errors": [
+        "Line 5: OBJECT_NAME is required in every metadata block (segment 1)."
+      ],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses a missing META_STOP": {
+      "valid": false,
+      "errors": [
+        "Line 13: META_STOP is missing: state lines begin here (segment 1)."
+      ],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses a wrong CCSDS_OEM_VERS": {
+      "valid": false,
+      "errors": [
+        "Line 1: CCSDS_OEM_VERS must be 3.0, but this file says 2.0."
+      ],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses a covariance block": {
+      "valid": false,
+      "errors": [
+        "Line 16: COVARIANCE blocks are not part of the 3rok profile. Remove the covariance data (segment 1)."
+      ],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses a token that is not a number": {
+      "valid": false,
+      "errors": [
+        "Line 5: START_TIME must match the first state's epoch, but START_TIME is 2026-10-03T18:05:00.000 and the first state is at 2026-10-03T18:20:00.000 (segment 1).",
+        "Line 14: \"abc\" is not a number. State lines hold km, km/s, and km/s^2 values (segment 1).",
+        "An OEM needs at least two state lines so the path has a start and an end, but this file has 1."
+      ],
+      "segment_count": 1,
+      "state_count": 1,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses a state line with the wrong number of values": {
+      "valid": false,
+      "errors": [
+        "Line 5: START_TIME must match the first state's epoch, but START_TIME is 2026-10-03T18:05:00.000 and the first state is at 2026-10-03T18:20:00.000 (segment 1).",
+        "Line 14: A state line holds an epoch and then 6 numbers (position and velocity) or 9 numbers (with acceleration), but this line has 5 (segment 1).",
+        "An OEM needs at least two state lines so the path has a start and an end, but this file has 1."
+      ],
+      "segment_count": 1,
+      "state_count": 1,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses an impossible calendar date": {
+      "valid": false,
+      "errors": [
+        "Line 11: START_TIME must be a UTC timestamp such as 2026-10-03T18:05:00.000, but this file says \"2026-02-30T18:05:00.000\" (segment 1)."
+      ],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-02-30T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses a COMMENT in the middle of the header": {
+      "valid": false,
+      "errors": [
+        "Line 4: COMMENT lines in the header must come directly after CCSDS_OEM_VERS."
+      ],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "accepts day-of-year epochs": {
+      "valid": true,
+      "errors": [],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-276T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "accepts epochs that end in Z": {
+      "valid": true,
+      "errors": [],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000Z",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "accepts 29 February in a leap year": {
+      "valid": true,
+      "errors": [],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses 29 February in a year that is not a leap year": {
+      "valid": false,
+      "errors": [
+        "Line 3: CREATION_DATE must be a UTC timestamp such as 2026-10-03T18:00:00, but this file says \"2026-02-29T00:00:00\"."
+      ],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "accepts day 366 in a leap year": {
+      "valid": true,
+      "errors": [],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses day 366 in a year that is not a leap year": {
+      "valid": false,
+      "errors": [
+        "Line 3: CREATION_DATE must be a UTC timestamp such as 2026-10-03T18:00:00, but this file says \"2026-366T00:00:00\"."
+      ],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses day 000 of the year": {
+      "valid": false,
+      "errors": [
+        "Line 3: CREATION_DATE must be a UTC timestamp such as 2026-10-03T18:00:00, but this file says \"2026-000T00:00:00\"."
+      ],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses month 13": {
+      "valid": false,
+      "errors": [
+        "Line 3: CREATION_DATE must be a UTC timestamp such as 2026-10-03T18:00:00, but this file says \"2026-13-01T00:00:00\"."
+      ],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses hour 24": {
+      "valid": false,
+      "errors": [
+        "Line 3: CREATION_DATE must be a UTC timestamp such as 2026-10-03T18:00:00, but this file says \"2026-10-03T24:00:00\"."
+      ],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses a leap second": {
+      "valid": false,
+      "errors": [
+        "Line 12: STOP_TIME must be a UTC timestamp such as 2026-10-03T18:05:00.000, but this file says \"2026-10-03T18:20:60.000\" (segment 1).",
+        "Line 15: \"2026-10-03T18:20:60.000\" is not a valid UTC epoch. Use a form like 2026-10-03T18:05:00.000 (segment 1).",
+        "An OEM needs at least two state lines so the path has a start and an end, but this file has 1."
+      ],
+      "segment_count": 1,
+      "state_count": 1,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:60.000",
+      "has_acceleration": false
+    },
+    "accepts fractional seconds of any length": {
+      "valid": true,
+      "errors": [],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses a time of day with no seconds": {
+      "valid": false,
+      "errors": [
+        "Line 3: CREATION_DATE must be a UTC timestamp such as 2026-10-03T18:00:00, but this file says \"2026-10-03T18:00\"."
+      ],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "accepts a state line whose values are separated by tabs": {
+      "valid": true,
+      "errors": [],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "accepts exponent notation in a state line": {
+      "valid": true,
+      "errors": [],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses a number too large to hold": {
+      "valid": false,
+      "errors": [
+        "Line 5: STOP_TIME must match the last state's epoch, but STOP_TIME is 2026-10-03T18:20:00.000 and the last state is at 2026-10-03T18:05:00.000 (segment 1).",
+        "Line 15: \"1e999\" is not a number. State lines hold km, km/s, and km/s^2 values (segment 1).",
+        "An OEM needs at least two state lines so the path has a start and an end, but this file has 1."
+      ],
+      "segment_count": 1,
+      "state_count": 1,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses a number with a stray character": {
+      "valid": false,
+      "errors": [
+        "Line 5: STOP_TIME must match the last state's epoch, but STOP_TIME is 2026-10-03T18:20:00.000 and the last state is at 2026-10-03T18:05:00.000 (segment 1).",
+        "Line 15: \"-3.1.0\" is not a number. State lines hold km, km/s, and km/s^2 values (segment 1).",
+        "An OEM needs at least two state lines so the path has a start and an end, but this file has 1."
+      ],
+      "segment_count": 1,
+      "state_count": 1,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses an empty OBJECT_NAME": {
+      "valid": false,
+      "errors": [
+        "Line 6: OBJECT_NAME must not be empty (segment 1)."
+      ],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses a lowercase keyword": {
+      "valid": false,
+      "errors": [
+        "Line 5: OBJECT_ID is required in every metadata block (segment 1).",
+        "Line 7: This is not a KEYWORD = value line: \"object_id = UNKNOWN\" (segment 1)."
+      ],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses a header keyword that appears twice": {
+      "valid": false,
+      "errors": [
+        "Line 5: ORIGINATOR appears more than once in the header."
+      ],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses a metadata keyword in the header": {
+      "valid": false,
+      "errors": [
+        "Line 4: OBJECT_NAME belongs between META_START and META_STOP, not in the header."
+      ],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses a header keyword inside the metadata block": {
+      "valid": false,
+      "errors": [
+        "Line 8: MESSAGE_ID is not an OEM metadata keyword (segment 1)."
+      ],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses a COMMENT between metadata keywords": {
+      "valid": false,
+      "errors": [
+        "Line 8: COMMENT lines in a metadata block must come directly after META_START (segment 1)."
+      ],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "accepts a COMMENT directly after META_START": {
+      "valid": true,
+      "errors": [],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses a COMMENT after the first state line": {
+      "valid": false,
+      "errors": [
+        "Line 15: COMMENT lines in the data section must come before the first state line (segment 1)."
+      ],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses USEABLE_START_TIME before START_TIME": {
+      "valid": false,
+      "errors": [
+        "Line 5: USEABLE_START_TIME must fall between START_TIME and STOP_TIME (segment 1)."
+      ],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses USEABLE_START_TIME after USEABLE_STOP_TIME": {
+      "valid": false,
+      "errors": [
+        "Line 5: USEABLE_START_TIME must not be later than USEABLE_STOP_TIME (segment 1)."
+      ],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses an INTERPOLATION_DEGREE of 0": {
+      "valid": false,
+      "errors": [
+        "Line 14: INTERPOLATION_DEGREE must be a whole number of 1 or more, but this file says \"0\" (segment 1)."
+      ],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses a state line with only an epoch": {
+      "valid": false,
+      "errors": [
+        "Line 16: A state line holds an epoch and then 6 numbers (position and velocity) or 9 numbers (with acceleration), but this line has 0 (segment 1)."
+      ],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses an epoch that is not a time": {
+      "valid": false,
+      "errors": [
+        "Line 5: STOP_TIME must match the last state's epoch, but STOP_TIME is 2026-10-03T18:20:00.000 and the last state is at 2026-10-03T18:05:00.000 (segment 1).",
+        "Line 15: \"yesterday\" is not a valid UTC epoch. Use a form like 2026-10-03T18:05:00.000 (segment 1).",
+        "An OEM needs at least two state lines so the path has a start and an end, but this file has 1."
+      ],
+      "segment_count": 1,
+      "state_count": 1,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses a second segment with no states": {
+      "valid": false,
+      "errors": [
+        "Line 16: There are no state lines after META_STOP (segment 2)."
+      ],
+      "segment_count": 2,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:40:00.000",
+      "has_acceleration": false
+    },
+    "refuses a META_START that never closes": {
+      "valid": false,
+      "errors": [
+        "Line 16: The metadata block that starts at META_START never reaches META_STOP (segment 2)."
+      ],
+      "segment_count": 2,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": null,
+      "has_acceleration": false
+    },
+    "refuses an empty file": {
+      "valid": false,
+      "errors": [
+        "The file is empty. An OEM starts with CCSDS_OEM_VERS = 3.0."
+      ],
+      "segment_count": 0,
+      "state_count": 0,
+      "start_time": null,
+      "stop_time": null,
+      "has_acceleration": false
+    },
+    "refuses a file of only blank lines": {
+      "valid": false,
+      "errors": [
+        "The file is empty. An OEM starts with CCSDS_OEM_VERS = 3.0."
+      ],
+      "segment_count": 0,
+      "state_count": 0,
+      "start_time": null,
+      "stop_time": null,
+      "has_acceleration": false
+    },
+    "refuses a file with a header and no META_START": {
+      "valid": false,
+      "errors": [
+        "The file has no META_START block, so it has no trajectory."
+      ],
+      "segment_count": 0,
+      "state_count": 0,
+      "start_time": null,
+      "stop_time": null,
+      "has_acceleration": false
+    },
+    "accepts Windows line endings": {
+      "valid": true,
+      "errors": [],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "accepts a byte-order mark before the file": {
+      "valid": true,
+      "errors": [],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "accepts a file with no final newline": {
+      "valid": true,
+      "errors": [],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "accepts blank lines and indentation": {
+      "valid": true,
+      "errors": [],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "accepts a no-break space between the values of a state line": {
+      "valid": true,
+      "errors": [],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "accepts a form feed between the values of a state line": {
+      "valid": true,
+      "errors": [],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses a state line that uses the next-line control character as a separator": {
+      "valid": false,
+      "errors": [
+        "Line 5: STOP_TIME must match the last state's epoch, but STOP_TIME is 2026-10-03T18:20:00.000 and the last state is at 2026-10-03T18:05:00.000 (segment 1).",
+        "Line 15: A state line holds an epoch and then 6 numbers (position and velocity) or 9 numbers (with acceleration), but this line has 0 (segment 1).",
+        "An OEM needs at least two state lines so the path has a start and an end, but this file has 1."
+      ],
+      "segment_count": 1,
+      "state_count": 1,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses a lone carriage return inside a line": {
+      "valid": false,
+      "errors": [
+        "Line 4: This is not a KEYWORD = value line: \"ORIGINATOR = 3ROK\rX\".",
+        "ORIGINATOR is required in the header."
+      ],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses a line separator inside a line": {
+      "valid": false,
+      "errors": [
+        "Line 4: This is not a KEYWORD = value line: \"ORIGINATOR = 3ROK X\".",
+        "ORIGINATOR is required in the header."
+      ],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses an epoch written in non-ASCII digits": {
+      "valid": false,
+      "errors": [
+        "Line 3: CREATION_DATE must be a UTC timestamp such as 2026-10-03T18:00:00, but this file says \"٢٠٢٦-10-03T18:00:00\"."
+      ],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses a number written in non-ASCII digits": {
+      "valid": false,
+      "errors": [
+        "Line 5: STOP_TIME must match the last state's epoch, but STOP_TIME is 2026-10-03T18:20:00.000 and the last state is at 2026-10-03T18:05:00.000 (segment 1).",
+        "Line 15: \"٣\" is not a number. State lines hold km, km/s, and km/s^2 values (segment 1).",
+        "An OEM needs at least two state lines so the path has a start and an end, but this file has 1."
+      ],
+      "segment_count": 1,
+      "state_count": 1,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    },
+    "refuses text that is not an OEM": {
+      "valid": false,
+      "errors": [
+        "Line 1: This is not a KEYWORD = value line: \"Sure! Here is a trajectory for you.\".",
+        "CCSDS_OEM_VERS = 3.0 is required at the top of the file.",
+        "CREATION_DATE is required in the header.",
+        "ORIGINATOR is required in the header.",
+        "The file has no META_START block, so it has no trajectory."
+      ],
+      "segment_count": 0,
+      "state_count": 0,
+      "start_time": null,
+      "stop_time": null,
+      "has_acceleration": false
+    },
+    "refuses a chat reply that wraps an OEM": {
+      "valid": false,
+      "errors": [
+        "Line 1: This is not a KEYWORD = value line: \"Here you go:\".",
+        "Line 19: A state line holds an epoch and then 6 numbers (position and velocity) or 9 numbers (with acceleration), but this line has 2 (segment 1)."
+      ],
+      "segment_count": 1,
+      "state_count": 2,
+      "start_time": "2026-10-03T18:05:00.000",
+      "stop_time": "2026-10-03T18:20:00.000",
+      "has_acceleration": false
+    }
+  }
+}

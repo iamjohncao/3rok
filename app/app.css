@@ -1,0 +1,476 @@
+/* App layout. Design tokens only: no hex or functional colors. */
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.app-main {
+  flex: 1;
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: var(--space-6);
+}
+
+.page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-5);
+  margin-bottom: var(--space-6);
+}
+
+.page-head__eyebrow {
+  margin: 0 0 var(--space-2);
+  color: var(--ink-subtle);
+}
+
+.page-head__title {
+  margin: 0;
+}
+
+.page-head__meta {
+  margin: var(--space-2) 0 0;
+  color: var(--ink-subtle);
+}
+
+/* An instrument frame: an empty, bordered area on the base surface. */
+.frame {
+  background: var(--surface-100);
+  border: 1px solid var(--line);
+}
+
+.frame--empty {
+  display: grid;
+  place-items: center;
+  min-height: 240px;
+  padding: var(--space-6);
+  text-align: center;
+}
+
+/* /cases/[id]: Data, Activity, Algorithm, Score */
+.case-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.case-grid > .rok-panel {
+  min-height: 280px;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.rename-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.save-error {
+  margin: 0 0 var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--status-critical);
+  color: var(--ink);
+}
+
+.tag {
+  padding: 2px var(--space-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  color: var(--ink-muted);
+}
+
+.record-groups {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+.record-group__title {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-2);
+  color: var(--ink-subtle);
+}
+
+.record-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.record-row {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+  background: var(--surface-100);
+}
+
+.record-row summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  cursor: pointer;
+}
+
+.data-upload,
+.chip-selector {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2);
+  margin: 0 0 var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line);
+}
+
+.data-upload input[type="file"] {
+  color: var(--ink-muted);
+}
+
+.data-upload input[type="file"]::file-selector-button {
+  margin-right: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-none);
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  cursor: pointer;
+}
+
+.data-upload input[type="file"]::file-selector-button:hover {
+  border-color: var(--ink);
+}
+
+.chip-selector legend {
+  padding: 0 var(--space-2);
+  color: var(--ink-subtle);
+}
+
+.chip-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.upload-preview,
+.upload-refusal {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--line-strong);
+  background: var(--surface-100);
+}
+
+.upload-refusal {
+  border-color: var(--status-critical);
+}
+
+.upload-rows {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.upload-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.ask-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2);
+  margin: 0 0 var(--space-5);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--line);
+}
+
+.log-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.log-entry {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
+}
+
+.log-entry__head {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-2);
+  color: var(--ink-subtle);
+}
+
+.log-entry__text {
+  margin: 0 0 var(--space-2);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: var(--font-sans);
+}
+
+.validation-list {
+  margin: var(--space-2) 0;
+  padding-left: var(--space-5);
+  color: var(--ink-muted);
+}
+
+.algorithm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.oem-stack {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+.oem-block__label {
+  margin: 0 0 var(--space-2);
+  color: var(--ink-subtle);
+}
+
+.oem-box {
+  display: block;
+  width: 100%;
+  min-height: 120px;
+  margin: 0;
+  padding: var(--space-3);
+  background: var(--surface-300);
+  color: var(--ink-muted);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  overflow: auto;
+  resize: vertical;
+  white-space: pre;
+}
+
+/* /test: the globe is most of the viewport, specs sit beside it and scroll on their own. */
+:root {
+  --nav-height: 57px; /* the app nav's height, checked in the browser test */
+}
+
+.test-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: var(--space-4);
+  height: calc(100dvh - var(--nav-height));
+  min-height: 0;
+  padding: var(--space-4);
+}
+
+.globe-frame {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.globe {
+  position: absolute;
+  inset: 0;
+}
+
+.globe__canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.globe__failure {
+  position: absolute;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  left: var(--space-4);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line-strong);
+  background: var(--surface-200);
+}
+
+.specs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.fixture-banner {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line-strong);
+  background: var(--surface-200);
+}
+
+.fixture-banner .eyebrow {
+  display: block;
+  margin-bottom: var(--space-1);
+  color: var(--ink);
+}
+
+.controls {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.controls__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.scrubber {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.scrubber input {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.readouts {
+  display: grid;
+  gap: var(--space-3);
+  margin: var(--space-3) 0 0;
+}
+
+.readout-row {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.readout-row dt {
+  margin: 0;
+}
+
+.readout-row__value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.vector {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fit-pick {
+  margin: var(--space-3) 0 var(--space-2);
+}
+
+.class-list {
+  display: grid;
+  gap: var(--space-3);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.class-row {
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+}
+
+.class-row--picked {
+  border-color: var(--ink);
+}
+
+.class-row p {
+  margin: 0 0 var(--space-2);
+}
+
+.class-row__name {
+  color: var(--ink-subtle);
+}
+
+/* /account */
+.account-main {
+  max-width: 560px;
+  margin: 0;
+}
+
+.account-form {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.account-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+@media (max-width: 900px) {
+  .rok-nav {
+    padding: var(--space-4);
+    gap: var(--space-4);
+  }
+
+  .rok-nav__links {
+    gap: var(--space-4);
+  }
+
+  .app-main {
+    padding: var(--space-4);
+  }
+
+  .case-grid,
+  .test-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .test-layout {
+    height: auto;
+  }
+
+  .globe-frame {
+    height: 60dvh;
+  }
+
+  .specs {
+    overflow-y: visible;
+  }
+}

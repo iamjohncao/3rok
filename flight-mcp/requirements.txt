@@ -1,0 +1,7 @@
+# What the Vercel deployment installs (see app.py). starmind_physics itself is in vendor/.
+# numpy, pyyaml, astropy and aep8 are what starmind_physics.evaluate imports. Nothing here is the optimizer.
+mcp>=1.27,<2
+numpy>=1.26
+astropy>=6.0
+pyyaml>=6.0
+aep8>=0.1.0
