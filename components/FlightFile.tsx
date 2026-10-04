@@ -152,7 +152,7 @@ function FlightView({ oem, origin }: { oem: Oem; origin: FlightOrigin }) {
 
         <OemReadout sample={sample} />
         <LaunchSpecs first={first} />
-        <PhysicsPanel />
+        <PhysicsPanel caseId={origin.kind === "case" ? origin.caseId : null} />
         <FitPanel terminal={terminal} />
       </aside>
     </>

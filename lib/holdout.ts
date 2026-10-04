@@ -27,9 +27,19 @@ export type ScoreOrbitInput = {
   shield_mm_Al: number;
 } & ({ chip_id: string } | { chip_preset: ChipPreset });
 
+/** What the physics service reports beyond the lifetime. Every figure is the package's estimate. */
+export type PhysicsEstimate = {
+  mean_power_kW: number | null;
+  radiator_area_m2: number | null;
+  shield_mass_kg: number | null;
+  limiting_mode: string | null;
+  /** The chip row's own provenance for its dose limit, as ai_chips.yaml marks it. Never relabeled. */
+  dose_limit_provenance: string | null;
+};
+
 export type ScoreOrbitResult =
   | { refused: true; reason?: string }
-  | { refused: false; lifetime_years: number | null; assumptions_note?: string | null };
+  | { refused: false; lifetime_years: number | null; assumptions_note?: string | null; estimate?: PhysicsEstimate };
 
 export type ScoreOrbit = (input: ScoreOrbitInput) => Promise<ScoreOrbitResult>;
 
@@ -120,7 +130,7 @@ function readOutcome(record: CaseRecord): Outcome | { skip: string } {
   return { record, kind: hasFailure ? "failure" : "censored", observed };
 }
 
-type ChosenChip = { record: CaseRecord; id: string; request: { chip_id: string } | { chip_preset: ChipPreset } };
+export type ChosenChip = { record: CaseRecord; id: string; request: { chip_id: string } | { chip_preset: ChipPreset } };
 
 function chooseChip(doc: Pick<CaseDocument, "records" | "chipIds">, known: ReadonlySet<string>): ChosenChip | string {
   const identities = doc.records.filter((record) => record.record_type === "chip-identity");
@@ -146,7 +156,7 @@ function chooseChip(doc: Pick<CaseDocument, "records" | "chipIds">, known: Reado
   return `The chip ${id} is not in ai_chips.yaml, and its chip-identity record does not say commercial or rad_hard in chip_preset. It is not scored as a guess.`;
 }
 
-type Found = { record: CaseRecord; value: number };
+export type Found = { record: CaseRecord; value: number };
 
 /** The one number a key holds across these records, or the sentence that says why there is not one. */
 function onlyValue(records: CaseRecord[], key: string, label: string, where: string, hint: string): Found | string {
@@ -162,6 +172,43 @@ function onlyValue(records: CaseRecord[], key: string, label: string, where: str
     return `The ${where} records disagree on ${label}: ${list}. Keep one.`;
   }
   return found[0];
+}
+
+/**
+ * The three things the case has to supply for a score: the one chip, the one LTAN, and the one
+ * shield thickness for that chip. Each is the value or the sentence that says why there is none.
+ * The evaluator and the testing page's physics panel both read the case through this function, so
+ * they cannot disagree about what a case says. Nothing is filled in.
+ */
+export function gatherScoreInputs(
+  doc: Pick<CaseDocument, "records" | "chipIds">,
+  known: ReadonlySet<string> = KNOWN_CHIP_IDS,
+): { chip: ChosenChip | string; ltan: Found | string; shield: Found | string } {
+  const chip = chooseChip(doc, known);
+
+  const trajectories = doc.records.filter((record) => record.record_type === "trajectory");
+  const ltan = onlyValue(trajectories, "ltan_hours", "ltan_hours", "trajectory", "Add ltan_hours to a trajectory record's body.");
+
+  const placements = doc.records.filter(
+    (record) => record.record_type === "placement" && (typeof chip === "string" || samePart(record.part_number, chip.record.part_number)),
+  );
+  const shield = onlyValue(placements, "shield_mm_al", "shield_mm_Al", "placement", "Add shield_mm_Al, in millimetres of aluminium, to the chip's placement record.");
+
+  return { chip, ltan, shield };
+}
+
+/** Where each number sent to the service came from, with that record's `value_status`. */
+export function describeScoreInputs(chip: ChosenChip, ltan: Found, shield: Found): ScoreInputs {
+  return {
+    chip: {
+      record_id: chip.record.record_id,
+      part_number: chip.record.part_number,
+      sent_as: "chip_id" in chip.request ? "chip_id" : "chip_preset",
+      value: "chip_id" in chip.request ? chip.request.chip_id : chip.request.chip_preset,
+    },
+    ltan_hours: { record_id: ltan.record.record_id, value: ltan.value, value_status: ltan.record.value_status },
+    shield_mm_Al: { record_id: shield.record.record_id, value: shield.value, value_status: shield.record.value_status },
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -227,17 +274,9 @@ export async function evaluateCandidate({
   const reduced = reduceOem(candidateOem);
   if (!reduced.ok) refusals.push(...reduced.refusals);
 
-  const chip = chooseChip(doc, knownChipIds);
+  const { chip, ltan, shield } = gatherScoreInputs(doc, knownChipIds);
   if (typeof chip === "string") refusals.push(chip);
-
-  const trajectories = doc.records.filter((record) => record.record_type === "trajectory");
-  const ltan = onlyValue(trajectories, "ltan_hours", "ltan_hours", "trajectory", "Add ltan_hours to a trajectory record's body.");
   if (typeof ltan === "string") refusals.push(ltan);
-
-  const placements = doc.records.filter(
-    (record) => record.record_type === "placement" && (typeof chip === "string" || samePart(record.part_number, chip.record.part_number)),
-  );
-  const shield = onlyValue(placements, "shield_mm_al", "shield_mm_Al", "placement", "Add shield_mm_Al, in millimetres of aluminium, to the chip's placement record.");
   if (typeof shield === "string") refusals.push(shield);
 
   if (outcomes.length === 0) {
@@ -259,16 +298,7 @@ export async function evaluateCandidate({
     );
   }
 
-  const inputs: ScoreInputs = {
-    chip: {
-      record_id: chip.record.record_id,
-      part_number: chip.record.part_number,
-      sent_as: "chip_id" in chip.request ? "chip_id" : "chip_preset",
-      value: "chip_id" in chip.request ? chip.request.chip_id : chip.request.chip_preset,
-    },
-    ltan_hours: { record_id: ltan.record.record_id, value: ltan.value, value_status: ltan.record.value_status },
-    shield_mm_Al: { record_id: shield.record.record_id, value: shield.value, value_status: shield.record.value_status },
-  };
+  const inputs = describeScoreInputs(chip, ltan, shield);
 
   // 3. Only the outcomes for this chip are compared with this chip's lifetime.
   const forChip = outcomes.filter((outcome) => samePart(outcome.record.part_number, chip.record.part_number));

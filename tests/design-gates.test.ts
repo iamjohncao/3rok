@@ -136,3 +136,19 @@ describe("secrets and the server line (Phase 7)", () => {
     expect(offenders(/\/fine[-_]?tun|\/training|\/model[-_]?update/i)).toEqual([]);
   });
 });
+
+describe("export and the physics estimate (Phase 9)", () => {
+  const readOnly = ["app/api/physics/route.ts", "lib/physics-estimate.ts", "lib/export.ts", "lib/download.ts"].map((file) => join(root, file));
+
+  it("never reaches the model", () => {
+    expect(offenders(/from ["'][^"']*\/(xai|xai-collections|grok-[a-z-]+)["']|api\.x\.ai|XAI_API_KEY/, readOnly)).toEqual([]);
+  });
+
+  it("never saves a case, and the physics route and export library write no log of their own", () => {
+    expect(offenders(/\.save\(|\.upsert\(|\.insert\(|applyHandEdit|applyIngest|applyExport\(/, readOnly.filter((file) => !file.endsWith("lib/export.ts")))).toEqual([]);
+  });
+
+  it("keeps the flight server's address and token out of the physics panel", () => {
+    expect(offenders(/FLIGHT_MCP|flight-client/, [join(root, "components/PhysicsPanel.tsx")])).toEqual([]);
+  });
+});

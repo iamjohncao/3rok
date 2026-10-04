@@ -61,9 +61,33 @@ describe("scoreOrbitVia", () => {
     expect(new Headers(seen.init?.headers).has("authorization")).toBe(false);
   });
 
+  it("carries the rest of the estimate and the chip's dose-limit provenance, and nothing it was not given", async () => {
+    const body = {
+      refused: false,
+      lifetime_years: 3.2,
+      mean_power_kW: 5.2,
+      radiator_area_m2: 11.5,
+      shield_mass_kg: 31.4,
+      limiting_mode: "dose",
+      chip: { id: "nvidia_jetson_agx_orin", dose_limit_provenance: "assumed" },
+    };
+    const result = await scoreOrbitVia(FLIGHT, { fetch: answering(200, body) })(INPUT);
+    expect(result).toMatchObject({
+      refused: false,
+      estimate: { mean_power_kW: 5.2, radiator_area_m2: 11.5, shield_mass_kg: 31.4, limiting_mode: "dose", dose_limit_provenance: "assumed" },
+    });
+    const sparse = await scoreOrbitVia(FLIGHT, { fetch: answering(200, { refused: false, lifetime_years: 3, mean_power_kW: "lots", limiting_mode: 7 }) })(INPUT);
+    expect(sparse).toMatchObject({ estimate: { mean_power_kW: null, limiting_mode: null, dose_limit_provenance: null } });
+  });
+
   it("returns the lifetime and the note from a score", async () => {
     const result = await scoreOrbitVia(FLIGHT, { fetch: answering(200, { refused: false, lifetime_years: 21.07, assumptions_note: "A ranking." }) })(INPUT);
-    expect(result).toEqual({ refused: false, lifetime_years: 21.07, assumptions_note: "A ranking." });
+    expect(result).toEqual({
+      refused: false,
+      lifetime_years: 21.07,
+      assumptions_note: "A ranking.",
+      estimate: { mean_power_kW: null, radiator_area_m2: null, shield_mass_kg: null, limiting_mode: null, dose_limit_provenance: null },
+    });
   });
 
   it("returns a refusal with the reason, and no lifetime", async () => {
