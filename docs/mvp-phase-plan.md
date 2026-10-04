@@ -506,6 +506,8 @@ The user message is the editor's request plus the working OEM if one exists. Tra
 
 ## Phase 8 — Testing page
 
+*Phase 10 replaces Cesium with our own globes and replaces the linear sampler with the flight engine. Where this phase names Cesium, `lib/oem-sample.ts` or "interpolate linearly", Phase 10 governs.*
+
 **What is being built.** The globe that flies an OEM, the readings, the physics panel, and the vehicle-class estimate. Import of a live case is Phase 9. Until then the screen loads `fixtures/minimal.oem` and says `Showing a fixture`.
 
 **Owns.** `app/test/page.tsx`, `components/Globe.tsx` (`ssr: false`), `components/OemReadout.tsx`, `components/PhysicsPanel.tsx`, `lib/fit.ts`, `lib/frame.ts` (GCRF to Earth-fixed, for drawing only).
@@ -590,6 +592,49 @@ The printable case view uses `data-theme="light"` because the design system rese
 
 ---
 
+## Phase 10 — Flight engine and globes
+
+**What is being built.** 3ROK's own flight engine, and two globes drawn by our own WebGL2 code in place of Cesium: a realistic globe and a particle globe. Each folds into a 2D map, each has a wide view and a chase view that keeps the satellite centered, and each carries a placement-score heat layer.
+
+**Why this phase exists.** Cesium only drew. The state between two OEM states came from `lib/oem-sample.ts`, which interpolates by a line or a cubic. It knew no gravity. This phase puts a physical model between the states and takes the renderer in-house.
+
+**Owns.** `lib/engine/` (`vec.ts`, `gravity.ts`, `integrate.ts`, `elements.ts`, `flight.ts`), `lib/globe/` (projection, camera, matrices, particles, heat, flux grid, texture loader, renderer, shaders), `components/globe/FlightGlobe.tsx`, `public/earth/` (Natural Earth II tiles, public domain), `public/flux/` (the precomputed trapped-flux grid), and `scripts/build-flux-grid.py`. It removes the `cesium` dependency, `scripts/copy-cesium.mjs`, `components/Globe.tsx`, `components/GlobeLoader.tsx`, `lib/load-cesium.ts`, and `NEXT_PUBLIC_CESIUM_ION_TOKEN`.
+
+**The engine is not the flight.** The OEM is still the flight and the only trajectory the product makes. The engine reads it and fills in between its states. It never writes a state, never replaces one, and never changes the file.
+
+- *Model.* Gravity only: a point mass plus the J2 term, about the mean pole of date. Dormand-Prince 5(4), adaptive step. There is no drag, because the case states no area or mass and none is invented. There is no thrust, no third body, and no radiation pressure. It reads no `COMMENT` line.
+- *Between two states.* It propagates forward from the earlier state and backward from the later one, and blends the two with a cubic weight that has zero slope at both ends. The path passes through every state in the file and leaves each one with the file's velocity. Where the file is itself a gravity-only orbit, both propagations agree and the blend adds nothing.
+- *The mismatch is reported.* For each interval it returns how far the earlier state, propagated by gravity alone, lands from the later state: kilometres of position and km/s of velocity, labeled `derived`. A large number means the file is not a coasting orbit. The page shows the number and does not guess why.
+- *Nothing across a segment.* A `META_START` boundary is still a boundary. An instant between two segments has no state.
+
+**Decisions this phase made.**
+
+- *Cesium is gone.* The globes are ours. They need no ion token and show no third-party attribution, because the imagery is Natural Earth II and Natural Earth is public domain.
+- *Both globes, one scene.* Every drawn thing is a longitude, latitude, and altitude. A shader turns it into a point on a sphere or a point on a plate carree map, and one number, `flat`, blends the two. The realistic globe's surface and the particle globe's dots both fold with it. Each dot folds on its own schedule, so the sphere unrolls as a wave and not as a slab.
+- *Views.* Wide shows the whole globe or the whole map, and can be turned and zoomed by hand. Chase puts the satellite in the centre of the screen and follows it as the epoch moves. On the map, chase pans so the satellite stays centred. Switching is animated.
+- *The heat layer is a score, not a probability.* The package's `latlon_flux_grid` gives AP8/AE8 trapped proton (>10 MeV) and electron (>1 MeV) flux for each 3° cell at altitudes from 500 to 2000 km in 100 km steps, solar maximum, epoch from `params.yaml`. `scripts/build-flux-grid.py` writes it to `public/flux/`. The app turns a cell's fluxes into a dose rate for the case's shield with the package's own coefficients, which are `assumed` in `params.yaml` and stay labeled so. A lower dose rate is a longer total-dose lifespan. The score runs from 0, the highest dose rate on the map, to 1, one thousand times lower or less, on a log scale. White is 0, yellow is the middle, red is 1, from the design system's `--thermal-3`, `--thermal-4` and `--thermal-5`. A cell with no model flux is scored 1, and the legend says that the model has no value there, not that the place is safe. No other quantity is drawn.
+- *What the map is made from.* The altitude is the mean altitude of the file's states. The shield is the case's `shield_mm_Al` for the selected chip, read by `gatherScoreInputs`. If the case does not state it, or the altitude is outside 500 to 2000 km, no heat is drawn and the page says why. Nothing is filled in. The fixture has no case, so it has no heat layer.
+- *A real probability needs data this does not have.* A survival probability needs a failure-dose distribution. A case's TID rows could supply one, and that is a later phase.
+- *Lockstep.* The dose-rate formula exists in the package (`dose.py`) and in `lib/globe/flux-grid.ts`. `scripts/build-flux-grid.py` also writes `fixtures/dose-rate-expected.json` from the package, and the TypeScript test compares to it.
+
+**Out.** Drag, thrust, mass, propellant, Mach, dynamic pressure, a vehicle model, drawn force vectors, a second trajectory, a flight that the engine invents when the file has too few states, and any claim that the heat is a probability.
+
+**Hard dependency.** Phases 1, 8, and 9. The globe still flies only the file the case exports, and the fixture path still works with no case.
+
+### Gates
+
+**The path is the picture.** Both globes and the map draw the path through the file's states, and the readout at an epoch is the engine's state there. **Not done if** a drawn point is not on the line through the file's states.
+
+**The data is visible.** The page names the gravity model, labels a state between two file states `propagated`, and shows each interval's mismatch as `derived`. The heat legend names its source, its altitude, its shield, and that the dose coefficients are assumed. **Not done if** the heat is called a probability, or a state the engine made is labeled `from file`.
+
+**Edits are logged.** Changing the style, the projection, or the view writes nothing to the case and changes nothing in the OEM. **Not done if** scrubbing, folding to the map, or chasing the satellite saves a case or writes its log.
+
+**The exported file is the artifact.** The engine only reads the OEM. **Not done if** a propagated state is written back, offered for download, or called the flight.
+
+**Grok reads. The evaluator keeps.** The engine, the globes and the heat layer never call the model and never score. **Not done if** `/test` can propose a file, or the heat changes `holdoutError`.
+
+---
+
 ## MVP done when
 
 One person who did not write the lane walks this on the deployed app:
@@ -608,7 +653,7 @@ One person who did not write the lane walks this on the deployed app:
 - Fine-tuning, or any control that implies Grok's weights changed.
 - A flight format other than CCSDS OEM 3.0 keyword-value notation.
 - Moving `3rok-design-system/` or `starmind-physics/`, or saving the physics package's JSON as the algorithm.
-- Treating `starmind-optimize` or the SAA grid as the testing page.
-- Dynamic pressure, Mach, throttle, propellant, booster return, payload-door timing, a 3D vehicle, and drawn force vectors.
+- Treating `starmind-optimize` or the SAA grid as the testing page. (Phase 10 draws the SAA grid's dose rate as a layer on the globe. It is a layer, not the page.)
+- Dynamic pressure, Mach, throttle, propellant, booster return, payload-door timing, a 3D vehicle, and drawn force vectors. (Phase 10's engine is gravity only and returns none of these.)
 - Teams, shared cases, prices, and a public case that is not signed in.
 - Filling an H100, Rubin, or Starmind lifetime from Jetson Orin or Trillium rows. Those rows stay labeled as the chips they are.
