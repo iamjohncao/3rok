@@ -6,6 +6,7 @@ Chip-test data in, a CCSDS OEM flight file out, flown on a globe. Read `docs/mvp
 
 - `npm run dev`, `npm run build`, `npm test`, `npm run typecheck`. Run `npm test` and `npm run typecheck` before every push.
 - Python (`starmind-physics/`): `pip install -e ".[dev]"`, then `pytest -m "not aep8"` when `aep8` is absent.
+- Python (`flight-mcp/`): `pip install -e ../starmind-physics -e ".[dev]"`, then `pytest -m "not aep8"` the same way. After a change to an OEM rule or sentence, edit both `lib/oem.ts` and `flight-mcp/flight_mcp/oem_profile.py`, then run `node --experimental-strip-types scripts/update-oem-golden.mjs` and read the diff.
 
 ## Rules that are easy to break
 

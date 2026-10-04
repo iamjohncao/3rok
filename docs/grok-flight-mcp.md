@@ -113,6 +113,8 @@ Same check as `validate_oem`. On success the server holds this text as the candi
 }
 ```
 
+The result is the `validate_oem` result plus `accepted` (true when the file validates), `held` (true when the server kept it for this MCP session), and `candidate_sha256`. A file that fails is not held and does not replace an earlier candidate. A stateless server validates and holds nothing, which changes nothing for the route.
+
 The route treats the last accepted `submit_oem` as the candidate. An OEM that appears only in the chat is ignored. After the response, the route validates that text again in-process. A model claim that the tool succeeded is not the check.
 
 ### `score_candidate`
@@ -149,7 +151,7 @@ The package ranks LEO compute-satellite configs inside a filed envelope of 500â€
 }
 ```
 
-One of `chip_id` or `chip_preset` is required. `radiator_area_m2: null` asks the model to size the radiator. `load_strategy` defaults to `constant`.
+Exactly one of `chip_id` or `chip_preset` is required. `radiator_area_m2: null` asks the model to size the radiator. `load_strategy` defaults to `constant`. A call with a missing field, an unknown field, or an unknown chip is a tool error, and the model can correct it and call again. A call that carries `epoch`, `position` or `velocity` is rejected by the schema.
 
 Result when the orbit is inside the envelope:
 
@@ -166,7 +168,7 @@ Result when the orbit is inside the envelope:
 }
 ```
 
-The zeros stand in for the shape. The live tool returns the package's numbers. `lifetime_years` is the minimum of the TID, thermal, power, and SEU-availability lives, which the package marks as an assumed definition.
+The zeros stand in for the shape. The live tool returns the package's numbers, plus `assumptions_note`, a `chip` block with the chip database's own `dose_limit_provenance` (`sourced` or `assumed`), a `dose` block, and an `orbit` block of scalars (never a state). A lifetime with no bound is `null`. An orbit outside the envelope returns `{ "refused": true, "reason": "...", "envelope": {...} }` and no lifetime. `lifetime_years` is the minimum of the TID, thermal, power, and SEU-availability lives, which the package marks as an assumed definition.
 
 ## What happens after the response
 

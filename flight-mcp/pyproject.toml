@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "flight-mcp"
+version = "0.1.0"
+description = "3rok flight MCP server: validate_oem, submit_oem and score_candidate over streaming HTTP"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+# starmind-physics is deliberately not listed. It is the package in this repository
+# (../starmind-physics), not a PyPI project. Install it first: see README.md.
+dependencies = [
+  "mcp>=1.27,<2",
+  "uvicorn>=0.30",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+flight-mcp = "flight_mcp.server:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["flight_mcp*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+  "aep8: tests that call starmind_physics.evaluate, which needs the aep8 radiation belt model",
+]

@@ -24,10 +24,15 @@ type ProfileCase = {
   this_app_wrote?: boolean;
   errors_mention?: string[];
 };
+type TextCase = { name: string; text: string; valid: boolean; this_app_wrote?: boolean; errors_mention?: string[] };
 const profile = JSON.parse(read("fixtures/oem-profile-cases.json")) as {
   base: string;
   cases: ProfileCase[];
+  text_cases: TextCase[];
 };
+// The exact validate_oem result of every case, written from lib/oem.ts by
+// scripts/update-oem-golden.mjs. flight-mcp's pytest compares its own validator to the same file.
+const golden = (JSON.parse(read("fixtures/oem-profile-expected.json")) as { expected: Record<string, ReturnType<typeof validateOem>> }).expected;
 
 // Applies a case's edits to the base file. Each `replace` must hit exactly one
 // line, so a typo in the fixture fails loudly instead of testing nothing.
@@ -73,6 +78,29 @@ describe("shared profile cases (fixtures/oem-profile-cases.json)", () => {
       }
     });
   }
+
+  const textCases = profile.text_cases.map((c) => ({ ...c, edits: undefined }));
+  for (const testCase of textCases) {
+    it(testCase.name, () => {
+      const result = validateOem(testCase.text, { thisAppWrote: testCase.this_app_wrote ?? false });
+      expect(result.valid, result.errors.join("\n")).toBe(testCase.valid);
+      for (const phrase of testCase.errors_mention ?? []) {
+        expect(result.errors.some((error) => error.includes(phrase)), `expected "${phrase}" in:\n${result.errors.join("\n")}`).toBe(true);
+      }
+    });
+  }
+
+  it("matches the recorded validate_oem result for every case, sentence for sentence", () => {
+    const names = [...profile.cases.map((c) => c.name), ...profile.text_cases.map((c) => c.name)];
+    expect(Object.keys(golden).sort()).toEqual([...names].sort());
+    for (const testCase of profile.cases) {
+      const text = applyEdits(read(profile.base), testCase.edits);
+      expect(validateOem(text, { thisAppWrote: testCase.this_app_wrote ?? false }), testCase.name).toEqual(golden[testCase.name]);
+    }
+    for (const testCase of profile.text_cases) {
+      expect(validateOem(testCase.text, { thisAppWrote: testCase.this_app_wrote ?? false }), testCase.name).toEqual(golden[testCase.name]);
+    }
+  });
 
   it("states every failure as a sentence, never a bare code", () => {
     for (const testCase of profile.cases.filter((c) => !c.valid)) {
