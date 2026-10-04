@@ -1,0 +1,230 @@
+{
+  "_about": "Written by scripts/build-flux-grid.py from starmind_physics.dose.dose_rate_krad_per_year. lib/globe/flux-grid.test.ts compares lib/globe/flux-grid.ts to it.",
+  "coefficients": {
+    "model": "exponential_fallback_not_SHIELDOSE2",
+    "k_p_krad_yr_per_flux": 0.008,
+    "k_e_krad_yr_per_flux": 2e-06,
+    "lambda_p_mm": 3.5,
+    "lambda_e_mm": 1.5,
+    "status": "assumed",
+    "note": "These coefficients are labelled [A] in starmind_physics/params.yaml. They are assumptions, not SHIELDOSE-2."
+  },
+  "cases": [
+    {
+      "proton_flux_cm2_s": 0.0,
+      "electron_flux_cm2_s": 0.0,
+      "shield_mm_Al": 0.0,
+      "dose_rate_krad_Si_per_year": 0.0
+    },
+    {
+      "proton_flux_cm2_s": 0.0,
+      "electron_flux_cm2_s": 0.0,
+      "shield_mm_Al": 1.0,
+      "dose_rate_krad_Si_per_year": 0.0
+    },
+    {
+      "proton_flux_cm2_s": 0.0,
+      "electron_flux_cm2_s": 0.0,
+      "shield_mm_Al": 2.5,
+      "dose_rate_krad_Si_per_year": 0.0
+    },
+    {
+      "proton_flux_cm2_s": 0.0,
+      "electron_flux_cm2_s": 0.0,
+      "shield_mm_Al": 5.0,
+      "dose_rate_krad_Si_per_year": 0.0
+    },
+    {
+      "proton_flux_cm2_s": 0.0,
+      "electron_flux_cm2_s": 0.0,
+      "shield_mm_Al": 10.0,
+      "dose_rate_krad_Si_per_year": 0.0
+    },
+    {
+      "proton_flux_cm2_s": 0.0,
+      "electron_flux_cm2_s": 0.0,
+      "shield_mm_Al": 20.0,
+      "dose_rate_krad_Si_per_year": 0.0
+    },
+    {
+      "proton_flux_cm2_s": 3041.0,
+      "electron_flux_cm2_s": 0.0,
+      "shield_mm_Al": 0.0,
+      "dose_rate_krad_Si_per_year": 24.328
+    },
+    {
+      "proton_flux_cm2_s": 3041.0,
+      "electron_flux_cm2_s": 0.0,
+      "shield_mm_Al": 1.0,
+      "dose_rate_krad_Si_per_year": 18.281939585935557
+    },
+    {
+      "proton_flux_cm2_s": 3041.0,
+      "electron_flux_cm2_s": 0.0,
+      "shield_mm_Al": 2.5,
+      "dose_rate_krad_Si_per_year": 11.909569493701555
+    },
+    {
+      "proton_flux_cm2_s": 3041.0,
+      "electron_flux_cm2_s": 0.0,
+      "shield_mm_Al": 5.0,
+      "dose_rate_krad_Si_per_year": 5.830230414555522
+    },
+    {
+      "proton_flux_cm2_s": 3041.0,
+      "electron_flux_cm2_s": 0.0,
+      "shield_mm_Al": 10.0,
+      "dose_rate_krad_Si_per_year": 1.397220761542595
+    },
+    {
+      "proton_flux_cm2_s": 3041.0,
+      "electron_flux_cm2_s": 0.0,
+      "shield_mm_Al": 20.0,
+      "dose_rate_krad_Si_per_year": 0.08024604803048621
+    },
+    {
+      "proton_flux_cm2_s": 0.0,
+      "electron_flux_cm2_s": 93508.9,
+      "shield_mm_Al": 0.0,
+      "dose_rate_krad_Si_per_year": 0.18701779999999998
+    },
+    {
+      "proton_flux_cm2_s": 0.0,
+      "electron_flux_cm2_s": 93508.9,
+      "shield_mm_Al": 1.0,
+      "dose_rate_krad_Si_per_year": 0.09601814008381349
+    },
+    {
+      "proton_flux_cm2_s": 0.0,
+      "electron_flux_cm2_s": 93508.9,
+      "shield_mm_Al": 2.5,
+      "dose_rate_krad_Si_per_year": 0.03532309971635457
+    },
+    {
+      "proton_flux_cm2_s": 0.0,
+      "electron_flux_cm2_s": 93508.9,
+      "shield_mm_Al": 5.0,
+      "dose_rate_krad_Si_per_year": 0.006671671753017778
+    },
+    {
+      "proton_flux_cm2_s": 0.0,
+      "electron_flux_cm2_s": 93508.9,
+      "shield_mm_Al": 10.0,
+      "dose_rate_krad_Si_per_year": 0.0002380051737322079
+    },
+    {
+      "proton_flux_cm2_s": 0.0,
+      "electron_flux_cm2_s": 93508.9,
+      "shield_mm_Al": 20.0,
+      "dose_rate_krad_Si_per_year": 3.0289342898536113e-07
+    },
+    {
+      "proton_flux_cm2_s": 120.5,
+      "electron_flux_cm2_s": 4000.0,
+      "shield_mm_Al": 0.0,
+      "dose_rate_krad_Si_per_year": 0.972
+    },
+    {
+      "proton_flux_cm2_s": 120.5,
+      "electron_flux_cm2_s": 4000.0,
+      "shield_mm_Al": 1.0,
+      "dose_rate_krad_Si_per_year": 0.7285314474768364
+    },
+    {
+      "proton_flux_cm2_s": 120.5,
+      "electron_flux_cm2_s": 4000.0,
+      "shield_mm_Al": 2.5,
+      "dose_rate_krad_Si_per_year": 0.4734291646356033
+    },
+    {
+      "proton_flux_cm2_s": 120.5,
+      "electron_flux_cm2_s": 4000.0,
+      "shield_mm_Al": 5.0,
+      "dose_rate_krad_Si_per_year": 0.23130899107664987
+    },
+    {
+      "proton_flux_cm2_s": 120.5,
+      "electron_flux_cm2_s": 4000.0,
+      "shield_mm_Al": 10.0,
+      "dose_rate_krad_Si_per_year": 0.05537522604439384
+    },
+    {
+      "proton_flux_cm2_s": 120.5,
+      "electron_flux_cm2_s": 4000.0,
+      "shield_mm_Al": 20.0,
+      "dose_rate_krad_Si_per_year": 0.003179772505499622
+    },
+    {
+      "proton_flux_cm2_s": 3041.0,
+      "electron_flux_cm2_s": 93508.9,
+      "shield_mm_Al": 0.0,
+      "dose_rate_krad_Si_per_year": 24.5150178
+    },
+    {
+      "proton_flux_cm2_s": 3041.0,
+      "electron_flux_cm2_s": 93508.9,
+      "shield_mm_Al": 1.0,
+      "dose_rate_krad_Si_per_year": 18.37795772601937
+    },
+    {
+      "proton_flux_cm2_s": 3041.0,
+      "electron_flux_cm2_s": 93508.9,
+      "shield_mm_Al": 2.5,
+      "dose_rate_krad_Si_per_year": 11.94489259341791
+    },
+    {
+      "proton_flux_cm2_s": 3041.0,
+      "electron_flux_cm2_s": 93508.9,
+      "shield_mm_Al": 5.0,
+      "dose_rate_krad_Si_per_year": 5.836902086308539
+    },
+    {
+      "proton_flux_cm2_s": 3041.0,
+      "electron_flux_cm2_s": 93508.9,
+      "shield_mm_Al": 10.0,
+      "dose_rate_krad_Si_per_year": 1.3974587667163272
+    },
+    {
+      "proton_flux_cm2_s": 3041.0,
+      "electron_flux_cm2_s": 93508.9,
+      "shield_mm_Al": 20.0,
+      "dose_rate_krad_Si_per_year": 0.0802463509239152
+    },
+    {
+      "proton_flux_cm2_s": 1.0,
+      "electron_flux_cm2_s": 1.0,
+      "shield_mm_Al": 0.0,
+      "dose_rate_krad_Si_per_year": 0.008002
+    },
+    {
+      "proton_flux_cm2_s": 1.0,
+      "electron_flux_cm2_s": 1.0,
+      "shield_mm_Al": 1.0,
+      "dose_rate_krad_Si_per_year": 0.006012845178840353
+    },
+    {
+      "proton_flux_cm2_s": 1.0,
+      "electron_flux_cm2_s": 1.0,
+      "shield_mm_Al": 2.5,
+      "dose_rate_krad_Si_per_year": 0.0039167110276613
+    },
+    {
+      "proton_flux_cm2_s": 1.0,
+      "electron_flux_cm2_s": 1.0,
+      "shield_mm_Al": 5.0,
+      "dose_rate_krad_Si_per_year": 0.001917279639520901
+    },
+    {
+      "proton_flux_cm2_s": 1.0,
+      "electron_flux_cm2_s": 1.0,
+      "shield_mm_Al": 10.0,
+      "dose_rate_krad_Si_per_year": 0.0004594634994085415
+    },
+    {
+      "proton_flux_cm2_s": 1.0,
+      "electron_flux_cm2_s": 1.0,
+      "shield_mm_Al": 20.0,
+      "dose_rate_krad_Si_per_year": 2.6388049286706317e-05
+    }
+  ]
+}

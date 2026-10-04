@@ -13,7 +13,7 @@
 
 import { meanPoleGcrf } from "../frame";
 import type { Oem, OemSegment, OemState, Vec3 } from "../oem";
-import { GRAVITY_NAME, type GravityModel } from "./gravity";
+import { GRAVITY_NAME, RADIUS_KM, type GravityModel } from "./gravity";
 import { propagate, propagateThrough, type PropagateOptions, type State } from "./integrate";
 import { norm, sub } from "./vec";
 
@@ -71,6 +71,19 @@ function mix(forward: State, backward: State, u: number, span: number): { positi
     velocity[i] = (1 - w) * forward.v[i] + w * backward.v[i] + ((dw / span) * (backward.r[i] - forward.r[i]));
   }
   return { position, velocity };
+}
+
+/** The mean of |position| over every state, less the equatorial radius, km. The same definition lib/oem-reduce.ts uses. */
+export function meanAltitudeKm(oem: Oem): number {
+  let sum = 0;
+  let n = 0;
+  for (const segment of oem.segments) {
+    for (const state of segment.states) {
+      sum += norm(state.position);
+      n++;
+    }
+  }
+  return n === 0 ? NaN : sum / n - RADIUS_KM;
 }
 
 export class FlightEngine {

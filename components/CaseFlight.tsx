@@ -6,6 +6,8 @@ import type { CaseDocument } from "../lib/case";
 import { UUID } from "../lib/case-validate";
 import { getCaseStore } from "../lib/case-store";
 import { flightArtifact } from "../lib/export";
+import { gatherScoreInputs } from "../lib/holdout";
+import type { HeatSource } from "./useHeatLayer";
 import { ACCOUNTS_NOT_SET_UP } from "../lib/supabase/env";
 import { useAccount } from "./AccountProvider";
 import { FlightFile } from "./FlightFile";
@@ -131,6 +133,12 @@ export function CaseFlight({ caseId }: { caseId: string }) {
     );
   }
 
+  const { shield } = gatherScoreInputs(doc);
+  const heat: HeatSource =
+    typeof shield === "string"
+      ? { status: "refused", reason: shield }
+      : { status: "ready", shieldMm: shield.value, recordId: shield.record.record_id, valueStatus: shield.record.value_status };
+
   return (
     <FlightFile
       key={`${doc.id}:${artifact.source}:${doc.updatedAt}`}
@@ -141,6 +149,7 @@ export function CaseFlight({ caseId }: { caseId: string }) {
         caseName: doc.name,
         source: artifact.source,
         holdoutError: doc.holdoutError,
+        heat,
       }}
     />
   );

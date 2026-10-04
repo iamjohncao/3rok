@@ -54,7 +54,11 @@ export function sampleScore(field: HeatField, lon: number, lat: number): number 
   return lerp(lerp(at(x0, y0), at(x1, y0), tx), lerp(at(x0, y0 + 1), at(x1, y0 + 1), tx), ty);
 }
 
-export const HEAT_ALPHA = 0.62;
+/** How strongly the layer tints the Earth: lighter where the score is 1, stronger where the dose rate is high. */
+export const HEAT_ALPHA_AT_1 = 0.5;
+export const HEAT_ALPHA_AT_0 = 0.72;
+
+const heatAlpha = (score: number) => HEAT_ALPHA_AT_1 + (HEAT_ALPHA_AT_0 - HEAT_ALPHA_AT_1) * (1 - Math.min(1, Math.max(0, score)));
 
 /** An RGBA8 texture, 360 by 180, row 0 at latitude -90, for the realistic globe's surface. */
 export function heatTexture(field: HeatField, ramp: Ramp, width = 360, height = 180): Uint8Array {
@@ -63,12 +67,13 @@ export function heatTexture(field: HeatField, ramp: Ramp, width = 360, height = 
     const lat = (((y + 0.5) / height) * Math.PI) - Math.PI / 2;
     for (let x = 0; x < width; x++) {
       const lon = (((x + 0.5) / width) * 2 * Math.PI) - Math.PI;
-      const [r, g, b] = rampColor(sampleScore(field, lon, lat), ramp);
+      const score = sampleScore(field, lon, lat);
+      const [r, g, b] = rampColor(score, ramp);
       const k = (y * width + x) * 4;
       out[k] = Math.round(r);
       out[k + 1] = Math.round(g);
       out[k + 2] = Math.round(b);
-      out[k + 3] = Math.round(255 * HEAT_ALPHA);
+      out[k + 3] = Math.round(255 * heatAlpha(score));
     }
   }
   return out;

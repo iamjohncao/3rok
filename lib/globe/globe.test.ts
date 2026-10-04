@@ -4,7 +4,7 @@ import { norm, sub } from "../engine/vec";
 import type { Vec3 } from "../oem";
 import { circularState, flownStates, oemOf, T0 } from "../test-support/flight-oem";
 import { cameraFrame, satelliteWorldPoint, type CameraState, type SatelliteView } from "./camera";
-import { HEAT_ALPHA, heatTexture, parseHexColor, particleColors, rampColor, sampleScore, type HeatField, type Ramp } from "./heat";
+import { HEAT_ALPHA_AT_0, HEAT_ALPHA_AT_1, heatTexture, parseHexColor, particleColors, rampColor, sampleScore, type HeatField, type Ramp } from "./heat";
 import { toNdc } from "./mat4";
 import { PARTICLE_COUNT, fibonacciParticles, hashUnit, isLandPixel, landMask } from "./particles";
 import { INSTANCE_FLOATS, graticuleInstances, pathInstances, type PathVertex } from "./path-geometry";
@@ -246,10 +246,14 @@ describe("the heat colours", () => {
     expect(sampleScore(field, deg(0), deg(95))).toBeCloseTo(sampleScore(field, deg(0), deg(90)), 12);
   });
 
-  it("makes a texture with the ramp's colours and one fixed opacity", () => {
+  it("makes a texture with the ramp's colours, tinting hardest where the dose rate is highest", () => {
     const texture = heatTexture(field, ramp, 12, 6);
     expect(texture.length).toBe(12 * 6 * 4);
-    for (let i = 3; i < texture.length; i += 4) expect(texture[i]).toBe(Math.round(255 * HEAT_ALPHA));
+    for (let i = 3; i < texture.length; i += 4) {
+      expect(texture[i]).toBeGreaterThanOrEqual(Math.round(255 * HEAT_ALPHA_AT_1));
+      expect(texture[i]).toBeLessThanOrEqual(Math.round(255 * HEAT_ALPHA_AT_0));
+    }
+    expect(HEAT_ALPHA_AT_0).toBeGreaterThan(HEAT_ALPHA_AT_1);
     // The row nearest latitude 0, at longitude -60, is the top score.
     const x = 4; // (-60 + 180) / 360 * 12 = 4
     const y = 3; // just north of the equator

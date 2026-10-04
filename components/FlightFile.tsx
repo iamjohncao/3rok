@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FLIGHT_SOURCE_LABELS, type FlightSource } from "../lib/export";
-import { FlightEngine } from "../lib/engine/flight";
+import { FlightEngine, meanAltitudeKm } from "../lib/engine/flight";
 import { formatIssue, parseOem, type Oem } from "../lib/oem";
 import { EnginePanel } from "./EnginePanel";
+import { HeatPanel } from "./HeatPanel";
+import { useHeatLayer, type HeatSource } from "./useHeatLayer";
 import { FitPanel } from "./FitPanel";
 import { FlightGlobe } from "./globe/FlightGlobe";
 import { ImportCase } from "./ImportCase";
@@ -22,7 +24,15 @@ const FIXTURE_NAME = "fixtures/minimal.oem";
 /** Where the file on the globe came from. A case names itself and says which OEM string it is. */
 export type FlightOrigin =
   | { kind: "fixture" }
-  | { kind: "case"; caseId: string; caseName: string; source: FlightSource; holdoutError: number | null };
+  | {
+      kind: "case";
+      caseId: string;
+      caseName: string;
+      source: FlightSource;
+      holdoutError: number | null;
+      /** The case's shield for the placement layer, or the sentence that says why it has none. */
+      heat: HeatSource;
+    };
 
 function FixtureBanner() {
   return (
@@ -94,6 +104,8 @@ function FlightView({ oem, origin }: { oem: Oem; origin: FlightOrigin }) {
 
   const sample = useMemo(() => engine.sample(time), [engine, time]);
   const report = useMemo(() => engine.report(), [engine]);
+  const altitudeKm = useMemo(() => meanAltitudeKm(oem), [oem]);
+  const heat = useHeatLayer(altitudeKm, origin.kind === "case" ? origin.heat : null);
   const first = oem.segments[0].states[0];
   const lastSegment = oem.segments[oem.segments.length - 1];
   const terminal = useMemo(() => {
@@ -104,7 +116,7 @@ function FlightView({ oem, origin }: { oem: Oem; origin: FlightOrigin }) {
   return (
     <>
       <section aria-label="Globe" className="frame globe-frame">
-        <FlightGlobe engine={engine} time={time} heat={null} />
+        <FlightGlobe engine={engine} time={time} heat={heat.status === "ready" ? heat.placement.field : null} />
       </section>
 
       <aside aria-label="Specs" className="specs">
@@ -157,6 +169,7 @@ function FlightView({ oem, origin }: { oem: Oem; origin: FlightOrigin }) {
         <LaunchSpecs first={first} />
         <EnginePanel report={report} />
         <PhysicsPanel caseId={origin.kind === "case" ? origin.caseId : null} />
+        <HeatPanel state={heat} />
         <FitPanel terminal={terminal} />
       </aside>
     </>

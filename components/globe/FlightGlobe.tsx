@@ -61,6 +61,7 @@ export function FlightGlobe({
   const [style, setStyle] = useState<GlobeStyle>("realistic");
   const [shape, setShape] = useState<GlobeShape>("globe");
   const [follow, setFollow] = useState<GlobeFollow>("wide");
+  const [heatOn, setHeatOn] = useState(true);
   const start = useMemo(() => engine.bounds().start, [engine]);
 
   // Build the renderer once the Earth's picture is in.
@@ -123,7 +124,7 @@ export function FlightGlobe({
   useEffect(() => renderer.current?.setStyle(style), [ready, style]);
   useEffect(() => renderer.current?.setShape(shape), [ready, shape]);
   useEffect(() => renderer.current?.setFollow(follow), [ready, follow]);
-  useEffect(() => renderer.current?.setHeat(heat), [ready, heat]);
+  useEffect(() => renderer.current?.setHeat(heatOn ? heat : null), [ready, heat, heatOn]);
 
   // Dragging turns the globe or slides the map. The wheel zooms.
   useEffect(() => {
@@ -199,7 +200,28 @@ export function FlightGlobe({
           ]}
           onChange={setFollow}
         />
+        {heat ? (
+          <Choice
+            label="Placement score"
+            value={heatOn ? "on" : "off"}
+            options={[
+              { value: "on", text: "Score on" },
+              { value: "off", text: "Score off" },
+            ]}
+            onChange={(next) => setHeatOn(next === "on")}
+          />
+        ) : null}
       </div>
+      {heat && heatOn ? (
+        <div className="heat-legend" role="group" aria-label="Placement score legend">
+          <p className="eyebrow">Placement score</p>
+          <div className="heat-legend__bar" aria-hidden="true" />
+          <p className="heat-legend__ends data-sm">
+            <span>0 highest dose rate</span>
+            <span>1 a thousand times lower</span>
+          </p>
+        </div>
+      ) : null}
       {failure ? (
         <p className="globe__failure body-sm" role="alert">
           {failure}

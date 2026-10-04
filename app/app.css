@@ -358,6 +358,35 @@ body {
   color: var(--ink);
 }
 
+/* The placement-score key: the design system's thermal tokens, white to yellow to red. */
+.heat-legend {
+  position: absolute;
+  bottom: var(--space-3);
+  left: var(--space-3);
+  display: grid;
+  gap: var(--space-1);
+  width: min(340px, calc(100% - var(--space-6)));
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+  background: var(--surface-100);
+}
+
+.heat-legend p {
+  margin: 0;
+}
+
+.heat-legend__bar {
+  height: var(--space-2);
+  background: linear-gradient(to right, var(--thermal-3), var(--thermal-4), var(--thermal-5));
+}
+
+.heat-legend__ends {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  color: var(--ink-muted);
+}
+
 .engine-intervals {
   display: grid;
   gap: var(--space-1);

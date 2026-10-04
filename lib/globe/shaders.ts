@@ -46,11 +46,12 @@ out vec4 outColor;
 void main() {
   vec3 col = texture(u_earth, v_uv).rgb;
   vec4 h = texture(u_heat, v_uv);
-  col = mix(col, h.rgb, h.a * u_heatOn);
   vec3 n = normalize(v_normal);
   vec3 light = normalize(vec3(-0.35, 0.45, 0.85));
   float lambert = max(dot(n, light), 0.0);
   col *= mix(0.42 + 0.58 * lambert, 1.0, u_fold);
+  // The heat is laid over the lit surface, so the colours stay the design system's own, a little dimmer on the night side.
+  col = mix(col, h.rgb * mix(0.7 + 0.3 * lambert, 1.0, u_fold), h.a * u_heatOn);
   vec3 view = normalize(u_eye - v_world);
   float rim = pow(1.0 - max(dot(n, view), 0.0), 3.0) * (1.0 - u_fold);
   col += u_rim * rim * 0.55;
@@ -67,6 +68,7 @@ uniform mat4 u_viewProj;
 uniform float u_flat;
 uniform vec3 u_eye;
 uniform float u_pointPx;
+uniform float u_sizeRef;
 uniform vec3 u_landColor;
 uniform vec3 u_oceanColor;
 out vec4 v_color;
@@ -75,12 +77,14 @@ void main() {
   vec3 w = foldPoint(a_lonlat.x, a_lonlat.y, 0.0, e, 0.0);
   vec3 n = sphereNormal(a_lonlat.x, a_lonlat.y);
   float facing = mix(dot(n, normalize(u_eye - w)), 1.0, e);
-  float fade = mix(0.2, 1.0, smoothstep(-0.05, 0.25, facing));
+  float fade = mix(0.2, 1.0, smoothstep(-0.25, 0.1, facing));
   vec3 base = mix(u_oceanColor, u_landColor, a_land);
   vec3 col = a_heat.a > 0.0 ? a_heat.rgb : base;
   v_color = vec4(col, fade * mix(0.6, 1.0, a_land));
   gl_Position = u_viewProj * vec4(w, 1.0);
-  gl_PointSize = u_pointPx * mix(0.55, 1.0, a_land) * mix(0.7, 1.0, fade);
+  // Dots grow as the camera closes in, so a chase view is not a few specks. The wide view is the reference.
+  float near = clamp(u_sizeRef / gl_Position.w, 0.7, 3.5);
+  gl_PointSize = u_pointPx * near * mix(0.55, 1.0, a_land) * mix(0.7, 1.0, fade);
 }
 `;
 

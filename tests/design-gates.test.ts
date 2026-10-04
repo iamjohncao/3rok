@@ -62,6 +62,8 @@ describe("testing page (Phase 8)", () => {
     "components/TestScreen.tsx",
     "components/FlightFile.tsx",
     "components/EnginePanel.tsx",
+    "components/HeatPanel.tsx",
+    "components/useHeatLayer.ts",
     "components/globe/FlightGlobe.tsx",
     "components/OemReadout.tsx",
     "components/LaunchSpecs.tsx",
@@ -149,5 +151,34 @@ describe("export and the physics estimate (Phase 9)", () => {
 
   it("keeps the flight server's address and token out of the physics panel", () => {
     expect(offenders(/FLIGHT_MCP|flight-client/, [join(root, "components/PhysicsPanel.tsx")])).toEqual([]);
+  });
+});
+
+describe("the flight engine and the globes (Phase 10)", () => {
+  const engineAndGlobe = () => sourceFiles().filter((file) => /^lib\/(engine|globe)\//.test(relative(root, file)));
+  const heatFiles = ["components/HeatPanel.tsx", "components/globe/FlightGlobe.tsx", "components/useHeatLayer.ts", "lib/globe/flux-grid.ts", "lib/globe/heat.ts"].map((file) => join(root, file));
+
+  it("read the OEM and the radiation grid and nothing else: no case store, no model, no account", () => {
+    expect(offenders(/from ["'][^"']*\/(case-store|case-ops|account|xai|flight-client|grok-[a-z-]+|supabase\/[a-z-]+)["']|\bgetCaseStore\b|api\/(grok|cases|physics)/, engineAndGlobe())).toEqual([]);
+  });
+
+  it("never call the heat a probability: every use of the word is a denial", () => {
+    for (const file of heatFiles) {
+      const text = readFileSync(file, "utf8");
+      const uses = (text.match(/probabilit/gi) ?? []).length;
+      const denials = (text.match(/not a probability/gi) ?? []).length;
+      expect({ file: relative(root, file), uses }).toEqual({ file: relative(root, file), uses: denials });
+    }
+  });
+
+  it("have no state, no drag and no thrust in the engine: it is gravity and nothing else", () => {
+    const gravity = readFileSync(join(root, "lib/engine/gravity.ts"), "utf8");
+    expect(gravity).toContain("point mass + J2");
+    expect(offenders(/\bdrag(Coefficient|Area)|ballistic|thrustVector|massKg|propellant/i, engineAndGlobe())).toEqual([]);
+  });
+
+  it("paint with design tokens: the globe reads its colours from the page", () => {
+    expect(readFileSync(join(root, "lib/globe/tokens.ts"), "utf8")).toContain("--thermal-5");
+    expect(offenders(/#[0-9a-f]{3,8}\b|\b(rgb|rgba|hsl|hsla)\(/i, engineAndGlobe())).toEqual([]);
   });
 });

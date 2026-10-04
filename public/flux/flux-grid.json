@@ -1,0 +1,57 @@
+{
+  "source": "starmind_physics.flux.latlon_flux_grid",
+  "model": "AE8/AP8 via aep8",
+  "solar": "max",
+  "epoch_utc": "2026-10-03T12:00:00",
+  "altitudes_km": [
+    500,
+    600,
+    700,
+    800,
+    900,
+    1000,
+    1100,
+    1200,
+    1300,
+    1400,
+    1500,
+    1600,
+    1700,
+    1800,
+    1900,
+    2000
+  ],
+  "lat": {
+    "start_deg": -90.0,
+    "step_deg": 3.0,
+    "count": 61
+  },
+  "lon": {
+    "start_deg": -180.0,
+    "step_deg": 3.0,
+    "count": 121
+  },
+  "particles": [
+    {
+      "key": "p",
+      "energy_MeV": 10.0,
+      "quantity": "integral flux above the energy, cm^-2 s^-1"
+    },
+    {
+      "key": "e",
+      "energy_MeV": 1.0,
+      "quantity": "integral flux above the energy, cm^-2 s^-1"
+    }
+  ],
+  "layout": "float32 little-endian, [altitude][particle][lat][lon], latitude from the south, longitude from -180 (the last column repeats the first)",
+  "dose": {
+    "model": "exponential_fallback_not_SHIELDOSE2",
+    "k_p_krad_yr_per_flux": 0.008,
+    "k_e_krad_yr_per_flux": 2e-06,
+    "lambda_p_mm": 3.5,
+    "lambda_e_mm": 1.5,
+    "status": "assumed",
+    "note": "These coefficients are labelled [A] in starmind_physics/params.yaml. They are assumptions, not SHIELDOSE-2."
+  },
+  "generated_by": "scripts/build-flux-grid.py"
+}

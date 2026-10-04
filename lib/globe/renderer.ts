@@ -146,7 +146,7 @@ export class GlobeRenderer {
     this.lineProgram = program(gl, LINE_VERT, LINE_FRAG);
     this.markerProgram = program(gl, MARKER_VERT, MARKER_FRAG);
     this.su = uniforms(gl, this.surfaceProgram, ["u_viewProj", "u_fold", "u_earth", "u_heat", "u_heatOn", "u_eye", "u_rim"]);
-    this.pu = uniforms(gl, this.particleProgram, ["u_viewProj", "u_flat", "u_eye", "u_pointPx", "u_landColor", "u_oceanColor"]);
+    this.pu = uniforms(gl, this.particleProgram, ["u_viewProj", "u_flat", "u_eye", "u_pointPx", "u_sizeRef", "u_landColor", "u_oceanColor"]);
     this.lu = uniforms(gl, this.lineProgram, ["u_viewProj", "u_fold", "u_viewport", "u_widthPx", "u_lift", "u_eye", "u_pastColor", "u_futureColor", "u_now", "u_useTime", "u_fadeBack"]);
     this.mu = uniforms(gl, this.markerProgram, ["u_viewProj", "u_fold", "u_sat", "u_sizePx", "u_eye", "u_ink", "u_accent", "u_fadeBack"]);
 
@@ -499,6 +499,9 @@ export class GlobeRenderer {
       gl.uniform1f(this.pu.u_flat, this.flat);
       gl.uniform3f(this.pu.u_eye, eye[0], eye[1], eye[2]);
       gl.uniform1f(this.pu.u_pointPx, 2.4 * dpr);
+      const wide = cameraFrame({ ...this.cameraState(), chase: 0 });
+      const wideDistance = Math.hypot(wide.eye[0] - wide.target[0], wide.eye[1] - wide.target[1], wide.eye[2] - wide.target[2]);
+      gl.uniform1f(this.pu.u_sizeRef, wideDistance * (0.75 + 0.25 * fold));
       gl.uniform3f(this.pu.u_landColor, ...norm(t.landDot));
       gl.uniform3f(this.pu.u_oceanColor, ...norm(t.oceanDot));
       gl.bindVertexArray(this.particleVao);
