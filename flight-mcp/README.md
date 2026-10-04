@@ -46,7 +46,7 @@ Not options: **Supabase** runs Edge Functions on Deno, with no Python and no `nu
 ### Vercel
 
 1. In Vercel, **Add New → Project**, import the same GitHub repository (`iamjohncao/3rok`), and set **Root Directory** to `flight-mcp`. Name it something other than `3rok` and `3rok1`.
-2. Framework preset: leave it on **Other**. Vercel finds `app.py`, installs `requirements.txt`, and runs the stateless `app` in it.
+2. Application preset: **Python**. Not FastAPI (the FastAPI preset looks for a FastAPI instance, and this is a Starlette app), and not Other. `flight-mcp/vercel.json` also sets `"framework": "python"`, so the dashboard choice cannot override it. Vercel finds `app.py`, installs `requirements.txt`, and runs the stateless `app` in it. Leave the build and output settings empty.
 3. Add the environment variable `FLIGHT_MCP_TOKEN` (any long random string).
 4. Deploy, then open `https://<project>.vercel.app/health`. It should answer `{"ok": true, ...}`. Use the production domain, not a preview URL: previews sit behind Vercel's login.
 5. On the `3rok` project, set `FLIGHT_MCP_URL` to `https://<project>.vercel.app/mcp` and `FLIGHT_MCP_TOKEN` to the same string.

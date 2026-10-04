@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "python",
   "functions": {
     "app.py": {
       "excludeFiles": "{tests/**,scripts/**,Dockerfile,Dockerfile.dockerignore,README.md}"

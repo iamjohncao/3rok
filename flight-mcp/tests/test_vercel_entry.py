@@ -44,6 +44,17 @@ class TestTheVendoredPhysics:
         assert "differs: evaluate.py" in problems and any(p.startswith("missing from vendor") for p in problems)
 
 
+class TestTheVercelProjectSettings:
+    def test_the_project_is_pinned_to_the_python_preset(self) -> None:
+        settings = json.loads((HERE / "vercel.json").read_text())
+        # Not "fastapi": that preset looks for a FastAPI instance, and this app is Starlette.
+        assert settings["framework"] == "python"
+
+    def test_the_entrypoint_is_the_stateless_app(self) -> None:
+        assert 'entrypoint = "app:app"' in (HERE / "pyproject.toml").read_text()
+        assert (HERE / "app.py").exists()
+
+
 class TestTheDependencyLists:
     def test_requirements_and_pyproject_name_the_same_runtime_packages(self) -> None:
         requirements = {line.split(">=")[0].strip() for line in (HERE / "requirements.txt").read_text().splitlines() if line and not line.startswith("#")}
