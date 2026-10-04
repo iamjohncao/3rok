@@ -309,8 +309,61 @@ body {
 }
 
 .globe__canvas {
+  display: block;
   width: 100%;
   height: 100%;
+  touch-action: none;
+  cursor: grab;
+}
+
+.globe__loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  pointer-events: none;
+}
+
+/* The three switches over the globe: how the Earth looks, its shape, and where the camera is. */
+.globe-controls {
+  position: absolute;
+  top: var(--space-3);
+  left: var(--space-3);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  max-width: calc(100% - var(--space-6));
+}
+
+.seg {
+  display: inline-flex;
+}
+
+.seg .rok-btn {
+  margin-left: -1px;
+  background: var(--surface-100);
+  color: var(--ink-muted);
+}
+
+.seg .rok-btn:first-child {
+  margin-left: 0;
+}
+
+.seg .rok-btn[aria-pressed="true"] {
+  position: relative;
+  z-index: 1;
+  border-color: var(--ink);
+  background: var(--surface-300);
+  color: var(--ink);
+}
+
+.engine-intervals {
+  display: grid;
+  gap: var(--space-1);
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
 }
 
 .globe__failure {

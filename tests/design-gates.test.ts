@@ -61,8 +61,8 @@ describe("testing page (Phase 8)", () => {
     "app/test/page.tsx",
     "components/TestScreen.tsx",
     "components/FlightFile.tsx",
-    "components/Globe.tsx",
-    "components/GlobeLoader.tsx",
+    "components/EnginePanel.tsx",
+    "components/globe/FlightGlobe.tsx",
     "components/OemReadout.tsx",
     "components/LaunchSpecs.tsx",
     "components/PhysicsPanel.tsx",
@@ -72,11 +72,10 @@ describe("testing page (Phase 8)", () => {
   const importFiles = ["components/CaseFlight.tsx", "components/ImportCase.tsx"].map((file) => join(root, file));
   const testingFiles = [...drawingFiles, ...importFiles];
 
-  it("never bundles Cesium: it loads from public/cesium with a script tag", () => {
-    // Type-only uses (`typeof import("cesium")`, `import("cesium").Viewer`) are fine.
-    expect(
-      offenders(/await\s+import\(\s*["']cesium|^\s*import\s+(?!type\b)[^\n]*["']cesium|import\s+["']cesium\//m),
-    ).toEqual([]);
+  it("has no Cesium or other globe library: the globes are ours", () => {
+    expect(offenders(/from ["'](cesium|three|globe\.gl|mapbox-gl|maplibre-gl|deck\.gl)["']|import\(["'](cesium|three)["']\)|CESIUM_BASE_URL/)).toEqual([]);
+    const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as { dependencies?: Record<string, string> };
+    expect(Object.keys(manifest.dependencies ?? {}).filter((name) => /cesium|^three$|globe\.gl|mapbox|maplibre|deck\.gl/.test(name))).toEqual([]);
   });
 
   it("does not call Grok, so the globe cannot propose a new file", () => {

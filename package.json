@@ -7,9 +7,7 @@
     "node": "22.x"
   },
   "scripts": {
-    "predev": "node scripts/copy-cesium.mjs",
     "dev": "next dev",
-    "prebuild": "node scripts/copy-cesium.mjs",
     "build": "next build",
     "start": "next start",
     "test": "vitest run",
@@ -18,7 +16,6 @@
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.117.2",
-    "cesium": "^1.146.0",
     "next": "16.3.8",
     "react": "19.3.0",
     "react-dom": "19.3.0",

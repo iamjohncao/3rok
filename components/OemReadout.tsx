@@ -1,11 +1,12 @@
 import { derivedReadings, earthFixedToGeodetic, gcrfToEarthFixed } from "../lib/frame";
-import type { OemSample } from "../lib/oem-sample";
+import { elementsOf } from "../lib/engine/elements";
+import type { FlightSample } from "../lib/engine/flight";
 import { Panel } from "./ui/Panel";
 import { Measure, ReadoutRow, Readouts, Vector, epochText } from "./ui/Readout";
 
 // The state at the scrubbed epoch, as the file has it, then what can be derived from it.
 // Nothing here is a column the file does not have unless it is labeled derived.
-export function OemReadout({ sample }: { sample: OemSample | null }) {
+export function OemReadout({ sample }: { sample: FlightSample | null }) {
   if (sample === null) {
     return (
       <Panel id="state" title="State" eyebrow="At the scrubbed epoch">
@@ -16,9 +17,10 @@ export function OemReadout({ sample }: { sample: OemSample | null }) {
     );
   }
 
-  const stateSource = sample.atState ? "from file" : "interpolated";
+  const stateSource = sample.atState ? "from file" : "propagated";
   const geodetic = earthFixedToGeodetic(gcrfToEarthFixed(sample.position, sample.time));
   const derived = derivedReadings(sample.position, sample.velocity);
+  const elements = elementsOf(sample.position, sample.velocity);
 
   return (
     <>
@@ -31,21 +33,14 @@ export function OemReadout({ sample }: { sample: OemSample | null }) {
           <ReadoutRow label="Velocity" source={stateSource}>
             <Vector value={sample.velocity} digits={5} unit="km/s" />
           </ReadoutRow>
-          {sample.acceleration ? (
-            <ReadoutRow label="Acceleration" source={stateSource}>
-              <Vector value={sample.acceleration} digits={6} unit="km/s²" />
-            </ReadoutRow>
-          ) : null}
         </Readouts>
         {sample.atState ? null : (
           <p className="body-sm rok-subtle">
-            This instant is between two states in the file.{" "}
-            {sample.method === "hermite"
-              ? "The values use cubic Hermite interpolation, as the file asks."
-              : "The values use linear interpolation."}
+            This instant is between two states in the file. The flight engine flew gravity (point mass plus J2)
+            forward from the earlier state and backward from the later one and blended the two, so the line
+            passes through every state in the file.
           </p>
         )}
-        {sample.note ? <p className="body-sm rok-subtle">{sample.note}</p> : null}
       </Panel>
 
       <Panel id="derived" title="Derived" eyebrow="Computed from the state">
@@ -72,10 +67,27 @@ export function OemReadout({ sample }: { sample: OemSample | null }) {
           <ReadoutRow label="Specific energy" source="derived">
             <Measure value={derived.specificEnergyKm2S2} digits={3} unit="km²/s²" />
           </ReadoutRow>
+          <ReadoutRow label="Inclination" source="derived">
+            <Measure value={elements.inclinationDeg} digits={3} unit="°" />
+          </ReadoutRow>
+          <ReadoutRow label="Perigee altitude" source="derived">
+            <Measure value={elements.perigeeAltitudeKm} digits={1} unit="km" />
+          </ReadoutRow>
+          <ReadoutRow label="Apogee altitude" source="derived">
+            {elements.apogeeAltitudeKm === null ? (
+              <span className="data-sm">open orbit</span>
+            ) : (
+              <Measure value={elements.apogeeAltitudeKm} digits={1} unit="km" />
+            )}
+          </ReadoutRow>
+          <ReadoutRow label="Period" source="derived">
+            {elements.periodS === null ? <span className="data-sm">open orbit</span> : <Measure value={elements.periodS / 60} digits={2} unit="min" />}
+          </ReadoutRow>
         </Readouts>
         <p className="body-sm rok-subtle">
           Latitude, longitude, and altitude are approximate. They rotate the GCRF state to Earth-fixed with
-          sidereal time and mean precession, take UT1 as UTC, and leave out nutation and polar motion.
+          sidereal time and mean precession, take UT1 as UTC, and leave out nutation and polar motion. Inclination,
+          altitudes and period are osculating: they describe the two-body orbit that fits this one state.
         </p>
       </Panel>
     </>

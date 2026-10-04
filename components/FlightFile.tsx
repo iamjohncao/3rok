@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FLIGHT_SOURCE_LABELS, type FlightSource } from "../lib/export";
+import { FlightEngine } from "../lib/engine/flight";
 import { formatIssue, parseOem, type Oem } from "../lib/oem";
-import { oemTimeBounds, sampleOem } from "../lib/oem-sample";
+import { EnginePanel } from "./EnginePanel";
 import { FitPanel } from "./FitPanel";
-import { GlobeView } from "./GlobeLoader";
+import { FlightGlobe } from "./globe/FlightGlobe";
 import { ImportCase } from "./ImportCase";
 import { LaunchSpecs } from "./LaunchSpecs";
 import { OemReadout } from "./OemReadout";
@@ -55,7 +56,8 @@ function OriginBanner({ origin }: { origin: FlightOrigin }) {
 // The OEM that passed lib/oem.ts, drawn and read at the scrubbed epoch. Scrubbing and
 // playing change nothing in the file and write nothing to any case.
 function FlightView({ oem, origin }: { oem: Oem; origin: FlightOrigin }) {
-  const { start, stop } = useMemo(() => oemTimeBounds(oem), [oem]);
+  const engine = useMemo(() => new FlightEngine(oem), [oem]);
+  const { start, stop } = useMemo(() => engine.bounds(), [engine]);
   const [time, setTime] = useState(start);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState<(typeof SPEEDS)[number]>(60);
@@ -90,7 +92,8 @@ function FlightView({ oem, origin }: { oem: Oem; origin: FlightOrigin }) {
     setPlaying((value) => !value);
   }
 
-  const sample = useMemo(() => sampleOem(oem, time), [oem, time]);
+  const sample = useMemo(() => engine.sample(time), [engine, time]);
+  const report = useMemo(() => engine.report(), [engine]);
   const first = oem.segments[0].states[0];
   const lastSegment = oem.segments[oem.segments.length - 1];
   const terminal = useMemo(() => {
@@ -101,7 +104,7 @@ function FlightView({ oem, origin }: { oem: Oem; origin: FlightOrigin }) {
   return (
     <>
       <section aria-label="Globe" className="frame globe-frame">
-        <GlobeView oem={oem} time={time} />
+        <FlightGlobe engine={engine} time={time} heat={null} />
       </section>
 
       <aside aria-label="Specs" className="specs">
@@ -152,6 +155,7 @@ function FlightView({ oem, origin }: { oem: Oem; origin: FlightOrigin }) {
 
         <OemReadout sample={sample} />
         <LaunchSpecs first={first} />
+        <EnginePanel report={report} />
         <PhysicsPanel caseId={origin.kind === "case" ? origin.caseId : null} />
         <FitPanel terminal={terminal} />
       </aside>

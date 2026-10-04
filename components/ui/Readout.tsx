@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 // How a reading got onto the page. The word is always shown, never only a color.
-export type ReadoutSource = "from file" | "interpolated" | "derived" | "estimate" | "case value";
+export type ReadoutSource = "from file" | "propagated" | "derived" | "estimate" | "case value";
 
 export function Readouts({ children }: { children: ReactNode }) {
   return <dl className="readouts">{children}</dl>;

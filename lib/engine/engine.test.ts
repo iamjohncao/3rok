@@ -2,11 +2,12 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { gcrfToEarthFixed, meanPoleGcrf } from "../frame";
-import { parseOem, type Oem, type OemSegment, type OemState, type Vec3 } from "../oem";
+import { parseOem, type Vec3 } from "../oem";
 import { elementsOf } from "./elements";
 import { FlightEngine, blendWeight } from "./flight";
 import { J2, MU_KM3_S2, RADIUS_KM, acceleration, specificEnergy } from "./gravity";
 import { propagate, propagateThrough, type State } from "./integrate";
+import { circularState, flownStates, oemOf, T0 } from "../test-support/flight-oem";
 import { norm, sub } from "./vec";
 
 const root = fileURLToPath(new URL("../..", import.meta.url));
@@ -19,59 +20,14 @@ const WITH_J2 = { model: { j2: true, pole: Z } };
 const DATE_POLE = meanPoleGcrf(Date.UTC(2026, 9, 3, 18, 0, 0) / 1000);
 const WITH_J2_OF_DATE = { model: { j2: true, pole: DATE_POLE } };
 
-function circular(altKm: number, incDeg: number): State {
-  const a = RADIUS_KM + altKm;
-  const v = Math.sqrt(MU_KM3_S2 / a);
-  const i = (incDeg * Math.PI) / 180;
-  return { r: [a, 0, 0], v: [0, v * Math.cos(i), v * Math.sin(i)] };
-}
+const circular = circularState;
 
 function period(altKm: number): number {
   const a = RADIUS_KM + altKm;
   return 2 * Math.PI * Math.sqrt((a * a * a) / MU_KM3_S2);
 }
 
-const T0 = Date.UTC(2026, 9, 3, 18, 0, 0) / 1000;
-
-function oemOf(segments: { time: number; r: Vec3; v: Vec3 }[][]): Oem {
-  const toState = (s: { time: number; r: Vec3; v: Vec3 }): OemState => ({
-    epoch: new Date(s.time * 1000).toISOString().replace("Z", ""),
-    time: s.time,
-    position: s.r,
-    velocity: s.v,
-    acceleration: null,
-  });
-  const make = (states: ReturnType<typeof toState>[]): OemSegment => ({
-    comments: [],
-    objectName: "TEST",
-    objectId: "UNKNOWN",
-    centerName: "EARTH",
-    refFrame: "GCRF",
-    timeSystem: "UTC",
-    startTime: states[0].epoch,
-    stopTime: states[states.length - 1].epoch,
-    useableStartTime: null,
-    useableStopTime: null,
-    interpolation: null,
-    interpolationDegree: null,
-    dataComments: [],
-    states,
-  });
-  return {
-    headerComments: [],
-    classification: null,
-    creationDate: "2026-10-03T18:00:00",
-    originator: "3ROK",
-    messageId: null,
-    segments: segments.map((states) => make(states.map(toState))),
-  };
-}
-
-/** States a gravity-only satellite really flies, so a file made of them is consistent. */
-function flown(start: State, offsets: number[]): { time: number; r: Vec3; v: Vec3 }[] {
-  const states = propagateThrough(start, offsets, WITH_J2_OF_DATE);
-  return offsets.map((offset, i) => ({ time: T0 + offset, r: states[i].r, v: states[i].v }));
-}
+const flown = flownStates;
 
 describe("gravity", () => {
   it("is the point-mass pull when J2 is off", () => {
