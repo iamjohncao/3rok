@@ -309,3 +309,66 @@ class TestWhereTheServerReaches:
             ] + [node.module or "" for node in ast.walk(tree) if isinstance(node, ast.ImportFrom)]
             touches = any(name.startswith("starmind_physics") for name in names)
             assert touches is (path.name == "scoring.py"), path.name
+
+
+class TestScoreEndpoint:
+    """POST /score is the app's own door to the same score_candidate function."""
+
+    def test_it_returns_the_same_score_as_the_tool(self, served: Any) -> None:
+        url, _, calls = served
+        response = httpx.post(f"{url}/score", json=SCORE_ARGS, timeout=20)
+        assert response.status_code == 200
+        data = response.json()
+        assert data["refused"] is False and data["value_status"] == "derived" and data["assumptions_note"]
+        assert calls[0]["chip_id"] == "nvidia_jetson_agx_orin"
+
+    def test_400_km_is_a_refusal_with_no_lifetime(self, served: Any) -> None:
+        url, _, calls = served
+        response = httpx.post(f"{url}/score", json={**SCORE_ARGS, "altitude_km": 400}, timeout=20)
+        assert response.status_code == 200
+        assert response.json()["refused"] is True and "lifetime_years" not in response.json()
+        assert calls == []
+
+    @pytest.mark.parametrize("extra", [{"epoch": "2026-10-03T18:05:00"}, {"position": [1, 2, 3]}, {"split": "holdout"}])
+    def test_an_epoch_position_velocity_or_split_is_a_400(self, served: Any, extra: dict[str, Any]) -> None:
+        url, _, calls = served
+        response = httpx.post(f"{url}/score", json={**SCORE_ARGS, **extra}, timeout=20)
+        assert response.status_code == 400
+        assert "does not accept epochs, position or velocity" in response.json()["error"]
+        assert calls == []
+
+    def test_a_missing_field_is_a_400_and_nothing_is_defaulted(self, served: Any) -> None:
+        url, _, calls = served
+        args = {k: v for k, v in SCORE_ARGS.items() if k != "ltan_hours"}
+        response = httpx.post(f"{url}/score", json=args, timeout=20)
+        assert response.status_code == 400 and "ltan_hours is required" in response.json()["error"]
+        assert calls == []
+
+    def test_not_json_is_a_400(self, served: Any) -> None:
+        url, _, _ = served
+        assert httpx.post(f"{url}/score", content=b"not json", headers={"content-type": "application/json"}).status_code == 400
+        assert httpx.post(f"{url}/score", json=[1, 2]).status_code == 400
+
+    def test_a_package_failure_is_a_500_that_leaks_nothing(self) -> None:
+        def broken(_: dict[str, Any]) -> dict[str, Any]:
+            raise RuntimeError("secret detail")
+
+        with running(create_app(evaluate=broken)) as url:
+            response = httpx.post(f"{url}/score", json=SCORE_ARGS, timeout=20)
+        assert response.status_code == 500 and "secret detail" not in response.text
+
+    def test_it_needs_the_token_when_one_is_set(self) -> None:
+        with running(create_app(token="s3cret", evaluate=fake_evaluate())) as url:
+            assert httpx.post(f"{url}/score", json=SCORE_ARGS).status_code == 401
+            ok = httpx.post(f"{url}/score", json=SCORE_ARGS, headers={"Authorization": "Bearer s3cret"}, timeout=20)
+            assert ok.status_code == 200
+
+    def test_the_get_method_is_not_allowed(self, served: Any) -> None:
+        url, _, _ = served
+        assert httpx.get(f"{url}/score").status_code == 405
+
+
+class TestTheSharedToolSchemas:
+    def test_the_server_serves_exactly_the_shared_file(self) -> None:
+        shared = json.loads((Path(__file__).resolve().parents[1] / "flight_mcp" / "tool_schemas.json").read_text(encoding="utf-8"))["tools"]
+        assert [{"name": t.name, "description": t.description, "inputSchema": t.inputSchema} for t in TOOLS] == shared

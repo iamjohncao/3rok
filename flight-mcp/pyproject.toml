@@ -26,6 +26,9 @@ flight-mcp = "flight_mcp.server:main"
 where = ["."]
 include = ["flight_mcp*"]
 
+[tool.setuptools.package-data]
+flight_mcp = ["tool_schemas.json"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = [

@@ -20,6 +20,7 @@ import logging
 import os
 import time
 from collections import OrderedDict
+from importlib import resources
 from typing import Any
 
 import mcp.types as types
@@ -27,6 +28,7 @@ import uvicorn
 from mcp.server.lowlevel import Server
 from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
 from starlette.applications import Starlette
+from starlette.concurrency import run_in_threadpool
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 from starlette.routing import Route
@@ -40,55 +42,13 @@ LOG = logging.getLogger("flight_mcp")
 SERVER_NAME = "3rok-flight"
 TOOL_NAMES = ("validate_oem", "submit_oem", "score_candidate")
 
-TOOLS: list[types.Tool] = [
-    types.Tool(
-        name="validate_oem",
-        description="Validate a CCSDS OEM 3.0 KVN trajectory against the 3rok profile. Returns errors. Does not store the file.",
-        inputSchema={
-            "type": "object",
-            "additionalProperties": False,
-            "required": ["oem"],
-            "properties": {
-                "oem": {"type": "string", "description": "Full OEM keyword-value text, including the version header."},
-            },
-        },
-    ),
-    types.Tool(
-        name="submit_oem",
-        description="Validate an OEM and, if it passes, hold it as the candidate trajectory for this request. Does not publish it and does not see holdout data.",
-        inputSchema={
-            "type": "object",
-            "additionalProperties": False,
-            "required": ["oem"],
-            "properties": {"oem": {"type": "string"}},
-        },
-    ),
-    types.Tool(
-        name="score_candidate",
-        description=(
-            "Score one reduced LEO orbit for chip lifetime, mean power, radiator area, and shield mass. "
-            "Refuses orbits outside 500–2000 km and outside inclination 30 degrees or sun-synchronous. Does not propagate a trajectory."
-        ),
-        inputSchema={
-            "type": "object",
-            "additionalProperties": False,
-            "required": ["altitude_km", "inclination", "ltan_hours", "shield_mm_Al"],
-            "properties": {
-                "altitude_km": {"type": "number"},
-                "inclination": {
-                    "description": '"sso" or 30.',
-                    "anyOf": [{"type": "string", "enum": ["sso"]}, {"type": "number"}],
-                },
-                "ltan_hours": {"type": "number"},
-                "shield_mm_Al": {"type": "number"},
-                "chip_id": {"type": "string"},
-                "chip_preset": {"type": "string", "enum": ["commercial", "rad_hard"]},
-                "radiator_area_m2": {"type": ["number", "null"]},
-                "load_strategy": {"type": "string", "enum": ["constant"]},
-            },
-        },
-    ),
-]
+def _load_tools() -> list[types.Tool]:
+    """The tool definitions in tool_schemas.json, the one file the app and this server share."""
+    text = resources.files("flight_mcp").joinpath("tool_schemas.json").read_text(encoding="utf-8")
+    return [types.Tool(name=t["name"], description=t["description"], inputSchema=t["inputSchema"]) for t in json.loads(text)["tools"]]
+
+
+TOOLS: list[types.Tool] = _load_tools()
 
 
 class CandidateStore:
@@ -208,13 +168,38 @@ def create_app(
     async def health(_: Request) -> Response:
         return JSONResponse({"ok": True, "server": SERVER_NAME, "tools": list(TOOL_NAMES)})
 
+    async def score(request: Request) -> Response:
+        """The same ``score_candidate`` as the MCP tool, as one JSON request, for the app's own
+        evaluator. It takes the same fields, applies the same envelope and the same checks, and calls
+        the same function. It is not a second scorer."""
+        try:
+            arguments = await request.json()
+        except ValueError:
+            return JSONResponse({"error": "The request body is not JSON."}, status_code=400)
+        if not isinstance(arguments, dict):
+            return JSONResponse({"error": "The request body must be a JSON object."}, status_code=400)
+        try:
+            result = await run_in_threadpool(score_candidate, arguments, evaluate)
+        except InputError as error:
+            return JSONResponse({"error": str(error)}, status_code=400)
+        except PhysicsUnavailable as error:
+            return JSONResponse({"error": f"Physics unavailable: {error}"}, status_code=503)
+        except Exception:  # noqa: BLE001 - a failure here must not take the server down
+            LOG.exception("score failed")
+            return JSONResponse({"error": "The score could not be computed. No lifetime is returned."}, status_code=500)
+        return JSONResponse(result)
+
     @contextlib.asynccontextmanager
     async def lifespan(_: Starlette) -> Any:
         async with manager.run():
             yield
 
     app = Starlette(
-        routes=[Route("/health", health, methods=["GET"]), Route("/mcp", MCPEndpoint(), methods=["GET", "POST", "DELETE"])],
+        routes=[
+            Route("/health", health, methods=["GET"]),
+            Route("/score", score, methods=["POST"]),
+            Route("/mcp", MCPEndpoint(), methods=["GET", "POST", "DELETE"]),
+        ],
         lifespan=lifespan,
     )
     return BearerAuth(app, token)  # type: ignore[return-value]

@@ -8,6 +8,8 @@ The 3rok flight MCP server. Grok calls it through xAI's remote MCP connector whi
 | `submit_oem` | Same check. A file that passes is held, as text, for the MCP session that sent it. It is not published and not marked optimized. | No |
 | `score_candidate` | Scores one reduced LEO orbit with `starmind_physics.evaluate`. Refuses outside 500–2000 km and outside 30° or sun-synchronous. | Yes, and only this tool |
 
+`POST /score` is the same `score_candidate` as one JSON request (same fields, same envelope, same function, same bearer token), for the app's own evaluator in `lib/holdout.ts`. It is not a second scorer. The tool definitions live in `flight_mcp/tool_schemas.json`, and the Next.js app reads that same file, so the two sides cannot drift.
+
 It has no tool that reads a case, a split, or an outcome, and it writes nothing. The holdout evaluator is not here. It is `lib/holdout.ts`, in the app.
 
 ## Run it
