@@ -391,7 +391,7 @@ The chip selector writes `chipIds` from the chip-identity rows the person checks
 
 **What is being built.** The evaluator that decides whether a candidate OEM is kept. One function, so two lanes cannot invent two scores.
 
-**Owns.** `lib/holdout.ts`, `lib/oem-reduce.ts`, and their tests.
+**Owns.** `lib/holdout.ts`, `lib/oem-reduce.ts`, `lib/chip-ids.ts`, and their tests.
 
 **Reduction.** `reduceOem` reads states from a validated OEM and returns either a refusal or:
 
@@ -411,6 +411,17 @@ The chip selector writes `chipIds` from the chip-identity rows the person checks
 Keep the candidate only when that mean is finite and strictly lower than the stored `holdoutError`. The first finite score is kept, because there is no previous error. No holdout outcome rows: return `unscored`, and do not set `optimizedOem`.
 
 **Done.** Tests cover: error drops and the revision is kept; error rises and it is rejected; no holdout rows and the result is unscored; a censored survivor predicted dead adds error; a 400 km file is refused and not kept; the working copy is untouched by this function.
+
+**Decisions this phase made, so the Grok route and the screen read the same thing.**
+
+- *The service is passed in.* `evaluateCandidate({ candidateOem, doc, scoreOrbit })` takes the physics call as a function, so the library imports nothing but its own files. Phase 5's client is that function. A service that cannot be reached throws, and the route shows `Physics unavailable`. It is not scored and not logged as an error. A service that answers `refused: true`, or answers with no lifetime, is a refusal.
+- *The result.* `verdict` is `kept`, `rejected`, or `unscored`, with `error` (infinite for a refusal, `null` when unscored), `previous_error`, the reduced `orbit`, `inputs` (the record and `value_status` each number came from), the `predicted_lifetime_years`, the service's `assumptions_note`, the outcome `rows` used, `skipped` records with a reason each, `refusals`, and one `reason` sentence for the log. The route writes the log. It stores `holdout_error` as the finite error or `null`. It never stores infinity.
+- *Order.* No scorable holdout outcome is `unscored`, even when the file would also be refused. With outcomes, any refusal is `rejected`, and every refusal is listed at once.
+- *Which outcomes.* Only holdout `outcome` rows whose `part_number` is the selected chip-identity record's `part_number` are scored, so an H100 row is never compared with an Orin lifetime. A row that gives both times, no time, or a time that is not a number of years is skipped and named. Numbers may arrive as text, because CSV and XLSX bodies carry text.
+- *The chip.* Exactly one chip is scored. `chipIds` has one entry, or it is empty and there is one chip-identity record. Its id is the body `chip_id`, else the `part_number`. It is sent as `chip_id` when that id is in `ai_chips.yaml` (`lib/chip-ids.ts` is a copy, and a test fails when the two lists differ). Otherwise the record's body must carry `chip_preset` of `commercial` or `rad_hard`, and that is sent instead. Anything else refuses.
+- *LTAN and shield.* `ltan_hours` is read from the trajectory records and `shield_mm_Al` from the placement records for that chip, in any letter case. Two records that disagree refuse, naming both. `value_status` rides along, so an assumed LTAN shows as assumed.
+- *Reduction.* `reduceOem` parses with ORIGINATOR required to be 3ROK. It sends `"sso"` when the orbit is sun-synchronous, and the derived inclination when it is near 30 degrees. Its J2 and year length are the package's, and a test reads `params.yaml` and fails if they drift.
+- *What the score measures.* The error is how far the candidate's predicted lifetime is from the observed ones. It rewards a prediction that matches the holdout outcomes. It does not by itself reward the longest life. A failure row is scored both ways, a censored row only when the prediction falls short.
 
 **Out.** Calling Grok, drawing the path, showing the score as a loss curve.
 
