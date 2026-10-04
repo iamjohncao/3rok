@@ -64,6 +64,10 @@ export function wakeFlightServer(
   );
 }
 
+function finiteOrNull(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
 /** Statuses a host that is waking up answers with, and so worth one more try. */
 const WAKING = new Set([502, 503, 504]);
 const RETRY_AFTER_MS = 3000;
@@ -118,10 +122,18 @@ export function scoreOrbitVia(
 
     if (body.refused === true) return { refused: true, reason: typeof body.reason === "string" ? body.reason : undefined };
     const lifetime = body.lifetime_years;
+    const chip = typeof body.chip === "object" && body.chip !== null ? (body.chip as Record<string, unknown>) : null;
     return {
       refused: false,
       lifetime_years: typeof lifetime === "number" && Number.isFinite(lifetime) ? lifetime : null,
       assumptions_note: typeof body.assumptions_note === "string" ? body.assumptions_note : null,
+      estimate: {
+        mean_power_kW: finiteOrNull(body.mean_power_kW),
+        radiator_area_m2: finiteOrNull(body.radiator_area_m2),
+        shield_mass_kg: finiteOrNull(body.shield_mass_kg),
+        limiting_mode: typeof body.limiting_mode === "string" ? body.limiting_mode : null,
+        dose_limit_provenance: typeof chip?.dose_limit_provenance === "string" ? chip.dose_limit_provenance : null,
+      },
     };
   };
 }

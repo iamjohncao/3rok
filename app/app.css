@@ -309,8 +309,90 @@ body {
 }
 
 .globe__canvas {
+  display: block;
   width: 100%;
   height: 100%;
+  touch-action: none;
+  cursor: grab;
+}
+
+.globe__loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  pointer-events: none;
+}
+
+/* The three switches over the globe: how the Earth looks, its shape, and where the camera is. */
+.globe-controls {
+  position: absolute;
+  top: var(--space-3);
+  left: var(--space-3);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  max-width: calc(100% - var(--space-6));
+}
+
+.seg {
+  display: inline-flex;
+}
+
+.seg .rok-btn {
+  margin-left: -1px;
+  background: var(--surface-100);
+  color: var(--ink-muted);
+}
+
+.seg .rok-btn:first-child {
+  margin-left: 0;
+}
+
+.seg .rok-btn[aria-pressed="true"] {
+  position: relative;
+  z-index: 1;
+  border-color: var(--ink);
+  background: var(--surface-300);
+  color: var(--ink);
+}
+
+/* The placement-score key: the design system's thermal tokens, white to yellow to red. */
+.heat-legend {
+  position: absolute;
+  bottom: var(--space-3);
+  left: var(--space-3);
+  display: grid;
+  gap: var(--space-1);
+  width: min(340px, calc(100% - var(--space-6)));
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+  background: var(--surface-100);
+}
+
+.heat-legend p {
+  margin: 0;
+}
+
+.heat-legend__bar {
+  height: var(--space-2);
+  background: linear-gradient(to right, var(--thermal-3), var(--thermal-4), var(--thermal-5));
+}
+
+.heat-legend__ends {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  color: var(--ink-muted);
+}
+
+.engine-intervals {
+  display: grid;
+  gap: var(--space-1);
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
 }
 
 .globe__failure {
@@ -343,6 +425,29 @@ body {
   display: block;
   margin-bottom: var(--space-1);
   color: var(--ink);
+}
+
+.case-banner {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line);
+  background: var(--surface-200);
+  overflow-wrap: anywhere;
+}
+
+.case-banner .eyebrow {
+  display: block;
+  margin-bottom: var(--space-1);
+  color: var(--ink);
+}
+
+.import-case {
+  flex-basis: 100%;
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line);
+  background: var(--surface-200);
 }
 
 .controls {

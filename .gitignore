@@ -6,9 +6,6 @@ next-env.d.ts
 *.tsbuildinfo
 npm-debug.log*
 
-# Cesium assets are copied into public/cesium at build time (Phase 8)
-public/cesium/
-
 # Environment. .env.example is the only env file that is committed.
 .env
 .env.*

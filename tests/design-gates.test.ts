@@ -56,30 +56,41 @@ describe("design-system rules", () => {
 });
 
 describe("testing page (Phase 8)", () => {
-  const testingFiles = [
+  // The pages that draw. They hold no case store at all.
+  const drawingFiles = [
     "app/test/page.tsx",
     "components/TestScreen.tsx",
-    "components/Globe.tsx",
-    "components/GlobeLoader.tsx",
+    "components/FlightFile.tsx",
+    "components/EnginePanel.tsx",
+    "components/HeatPanel.tsx",
+    "components/useHeatLayer.ts",
+    "components/globe/FlightGlobe.tsx",
     "components/OemReadout.tsx",
     "components/LaunchSpecs.tsx",
     "components/PhysicsPanel.tsx",
     "components/FitPanel.tsx",
   ].map((file) => join(root, file));
+  // The two files that read a case to import it. They read and never write.
+  const importFiles = ["components/CaseFlight.tsx", "components/ImportCase.tsx"].map((file) => join(root, file));
+  const testingFiles = [...drawingFiles, ...importFiles];
 
-  it("never bundles Cesium: it loads from public/cesium with a script tag", () => {
-    // Type-only uses (`typeof import("cesium")`, `import("cesium").Viewer`) are fine.
-    expect(
-      offenders(/await\s+import\(\s*["']cesium|^\s*import\s+(?!type\b)[^\n]*["']cesium|import\s+["']cesium\//m),
-    ).toEqual([]);
+  it("has no Cesium or other globe library: the globes are ours", () => {
+    expect(offenders(/from ["'](cesium|three|globe\.gl|mapbox-gl|maplibre-gl|deck\.gl)["']|import\(["'](cesium|three)["']\)|CESIUM_BASE_URL/)).toEqual([]);
+    const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as { dependencies?: Record<string, string> };
+    expect(Object.keys(manifest.dependencies ?? {}).filter((name) => /cesium|^three$|globe\.gl|mapbox|maplibre|deck\.gl/.test(name))).toEqual([]);
   });
 
   it("does not call Grok, so the globe cannot propose a new file", () => {
     expect(offenders(/api\/grok|api\.x\.ai|XAI_API_KEY/i, testingFiles)).toEqual([]);
   });
 
-  it("does not touch the case store, so scrubbing and playing write no log", () => {
-    expect(offenders(/case-store|case-ops|getCaseStore|applyHandEdit/, testingFiles)).toEqual([]);
+  it("does not touch the case store where it draws, so scrubbing and playing write no log", () => {
+    expect(offenders(/case-store|case-ops|getCaseStore|applyHandEdit|applyExport/, drawingFiles)).toEqual([]);
+  });
+
+  it("reads a case to import it and never saves one or writes its log", () => {
+    expect(offenders(/\.save\(|case-ops|applyHandEdit|applyExport|applyIngest|method:\s*["']PUT/, importFiles)).toEqual([]);
+    expect(offenders(/getCaseStore/, importFiles).length).toBe(importFiles.length);
   });
 
   it("does not show a thrust, Mach, throttle, propellant, or dynamic-pressure reading", () => {
@@ -124,5 +135,50 @@ describe("secrets and the server line (Phase 7)", () => {
 
   it("has no fine-tune, training, or model-update call anywhere", () => {
     expect(offenders(/\/fine[-_]?tun|\/training|\/model[-_]?update/i)).toEqual([]);
+  });
+});
+
+describe("export and the physics estimate (Phase 9)", () => {
+  const readOnly = ["app/api/physics/route.ts", "lib/physics-estimate.ts", "lib/export.ts", "lib/download.ts"].map((file) => join(root, file));
+
+  it("never reaches the model", () => {
+    expect(offenders(/from ["'][^"']*\/(xai|xai-collections|grok-[a-z-]+)["']|api\.x\.ai|XAI_API_KEY/, readOnly)).toEqual([]);
+  });
+
+  it("never saves a case, and the physics route and export library write no log of their own", () => {
+    expect(offenders(/\.save\(|\.upsert\(|\.insert\(|applyHandEdit|applyIngest|applyExport\(/, readOnly.filter((file) => !file.endsWith("lib/export.ts")))).toEqual([]);
+  });
+
+  it("keeps the flight server's address and token out of the physics panel", () => {
+    expect(offenders(/FLIGHT_MCP|flight-client/, [join(root, "components/PhysicsPanel.tsx")])).toEqual([]);
+  });
+});
+
+describe("the flight engine and the globes (Phase 10)", () => {
+  const engineAndGlobe = () => sourceFiles().filter((file) => /^lib\/(engine|globe)\//.test(relative(root, file)));
+  const heatFiles = ["components/HeatPanel.tsx", "components/globe/FlightGlobe.tsx", "components/useHeatLayer.ts", "lib/globe/flux-grid.ts", "lib/globe/heat.ts"].map((file) => join(root, file));
+
+  it("read the OEM and the radiation grid and nothing else: no case store, no model, no account", () => {
+    expect(offenders(/from ["'][^"']*\/(case-store|case-ops|account|xai|flight-client|grok-[a-z-]+|supabase\/[a-z-]+)["']|\bgetCaseStore\b|api\/(grok|cases|physics)/, engineAndGlobe())).toEqual([]);
+  });
+
+  it("never call the heat a probability: every use of the word is a denial", () => {
+    for (const file of heatFiles) {
+      const text = readFileSync(file, "utf8");
+      const uses = (text.match(/probabilit/gi) ?? []).length;
+      const denials = (text.match(/not a probability/gi) ?? []).length;
+      expect({ file: relative(root, file), uses }).toEqual({ file: relative(root, file), uses: denials });
+    }
+  });
+
+  it("have no state, no drag and no thrust in the engine: it is gravity and nothing else", () => {
+    const gravity = readFileSync(join(root, "lib/engine/gravity.ts"), "utf8");
+    expect(gravity).toContain("point mass + J2");
+    expect(offenders(/\bdrag(Coefficient|Area)|ballistic|thrustVector|massKg|propellant/i, engineAndGlobe())).toEqual([]);
+  });
+
+  it("paint with design tokens: the globe reads its colours from the page", () => {
+    expect(readFileSync(join(root, "lib/globe/tokens.ts"), "utf8")).toContain("--thermal-5");
+    expect(offenders(/#[0-9a-f]{3,8}\b|\b(rgb|rgba|hsl|hsla)\(/i, engineAndGlobe())).toEqual([]);
   });
 });

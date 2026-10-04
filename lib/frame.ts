@@ -61,6 +61,18 @@ function precess(v: Vec3, unixSeconds: number): Vec3 {
   return rotateZ(rotateY(rotateZ(v, zeta), -theta), z);
 }
 
+/**
+ * The Earth's mean pole of date, as a unit vector in GCRF: the inverse of the precession above,
+ * applied to the mean-of-date z axis. The flight engine puts the J2 term about this axis.
+ */
+export function meanPoleGcrf(unixSeconds: number): Vec3 {
+  const t = daysSinceJ2000(unixSeconds) / 36525;
+  const zeta = (2306.2181 * t + 0.30188 * t * t + 0.017998 * t ** 3) * ARCSEC;
+  const theta = (2004.3109 * t - 0.42665 * t * t - 0.041833 * t ** 3) * ARCSEC;
+  const z = (2306.2181 * t + 1.09468 * t * t + 0.018203 * t ** 3) * ARCSEC;
+  return rotateZ(rotateY(rotateZ([0, 0, 1], -z), theta), -zeta);
+}
+
 /** A GCRF position (km) as an approximate Earth-fixed position (km) at a UTC instant, for display. */
 export function gcrfToEarthFixed(position: Vec3, unixSeconds: number): Vec3 {
   return rotateZ(precess(position, unixSeconds), -greenwichMeanSiderealTime(unixSeconds));

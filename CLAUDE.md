@@ -7,6 +7,7 @@ Chip-test data in, a CCSDS OEM flight file out, flown on a globe. Read `docs/mvp
 - `npm run dev`, `npm run build`, `npm test`, `npm run typecheck`. Run `npm test` and `npm run typecheck` before every push.
 - Python (`starmind-physics/`): `pip install -e ".[dev]"`, then `pytest -m "not aep8"` when `aep8` is absent.
 - Python (`flight-mcp/`): `pip install -e ../starmind-physics -e ".[dev]"`, then `pytest -m "not aep8"` the same way. After a change to an OEM rule or sentence, edit both `lib/oem.ts` and `flight-mcp/flight_mcp/oem_profile.py`, then run `node --experimental-strip-types scripts/update-oem-golden.mjs` and read the diff.
+- After a change to the physics package's flux model or dose coefficients, run `python scripts/build-flux-grid.py` (needs `aep8`), then commit `public/flux/` and `fixtures/dose-rate-expected.json` and run `npm test`. The globe's heat layer reads them.
 
 ## Rules that are easy to break
 
@@ -17,6 +18,7 @@ Chip-test data in, a CCSDS OEM flight file out, flown on a globe. Read `docs/mvp
 - Do not apply `starmind-physics/params.yaml` defaults when a case field is missing. Missing input refuses the score.
 - Holdout rows are visible to the person and never reach Grok.
 - Dynamic pressure, Mach, throttle, propellant, booster return and payload-door timing stay off the page until a physics function returns them.
+- The globes and the flight engine are ours (`lib/engine/`, `lib/globe/`). Do not add Cesium or another globe library. The OEM is the flight: the engine fills in between its states and never writes one. The heat layer is a score from AP8/AE8 flux and the package's assumed dose coefficients. Never call it a probability.
 
 ## UI
 

@@ -3,6 +3,7 @@
 import { useEffect, useId, useMemo, useState } from "react";
 import type { CaseDocument } from "../../lib/case";
 import { getDraftStore } from "../../lib/draft-store";
+import { FLIGHT_SOURCE_LABELS, flightArtifact, type ExportAction } from "../../lib/export";
 import { validateOem } from "../../lib/oem";
 import { Button } from "../ui/Button";
 import { Panel } from "../ui/Panel";
@@ -37,17 +38,68 @@ function OemCheck({ text }: { text: string }) {
   );
 }
 
+function ExportActions({
+  doc,
+  dirty,
+  disabled,
+  onExport,
+}: {
+  doc: CaseDocument;
+  dirty: boolean;
+  disabled: boolean;
+  onExport: (action: ExportAction) => Promise<void>;
+}) {
+  const [working, setWorking] = useState<ExportAction | null>(null);
+  const artifact = flightArtifact(doc);
+
+  async function run(action: ExportAction) {
+    setWorking(action);
+    try {
+      await onExport(action);
+    } finally {
+      setWorking(null);
+    }
+  }
+
+  const blocked = disabled || dirty || working !== null;
+  let sentence: string;
+  if (dirty) sentence = "You have an unsaved edit. Save or discard it first. Export sends the saved copy, not the text in the box.";
+  else if (artifact === null) sentence = "There is no flight file to export yet. Ask Grok for an optimized OEM, or save a working copy.";
+  else if (artifact.source === "workingOem") sentence = "Export sends the saved working copy. Each export is written to the activity log.";
+  else sentence = "The working copy is empty, so export sends the optimized OEM. Each export is written to the activity log.";
+
+  return (
+    <div>
+      <p className="oem-block__label eyebrow">Export · {artifact ? FLIGHT_SOURCE_LABELS[artifact.source] : "No flight file"}</p>
+      <p className="body-sm rok-subtle">{sentence}</p>
+      <div className="algorithm-actions">
+        <Button size="sm" disabled={blocked || artifact === null} onClick={() => run("testing")}>
+          Export to testing
+        </Button>
+        <Button size="sm" disabled={blocked || artifact === null} onClick={() => run("oem")}>
+          Download OEM
+        </Button>
+        <Button variant="quiet" size="sm" disabled={blocked} onClick={() => run("case")}>
+          Download case
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 // The optimized OEM is read-only. The working copy is plain text a person edits by hand.
 // Saving an edit changes the working copy and logs it. It never replaces the optimized file.
 export function AlgorithmRegion({
   doc,
   locked,
   onHandEdit,
+  onExport,
 }: {
   doc: CaseDocument;
   /** True while Grok works: the server is saving this case, so this page does not. */
   locked: boolean;
   onHandEdit: (text: string) => Promise<void>;
+  onExport: (action: ExportAction) => Promise<void>;
 }) {
   const saved = doc.workingOem ?? "";
   const [draft, setDraft] = useState(saved);
@@ -145,6 +197,8 @@ export function AlgorithmRegion({
             </Button>
           </div>
         </div>
+
+        <ExportActions doc={doc} dirty={dirty} disabled={locked} onExport={onExport} />
       </div>
     </Panel>
   );

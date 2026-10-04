@@ -32,6 +32,7 @@ describe("summarizeCase", () => {
       name: "Untitled case",
       chipFamily: null,
       hasOptimizedOem: false,
+      flightSource: null,
       isScored: false,
       lastLogAt: null,
       updatedAt: T0,
@@ -50,6 +51,7 @@ describe("summarizeCase", () => {
     expect(summarizeCase(doc)).toMatchObject({
       chipFamily: "Jetson Orin, TPU v6",
       hasOptimizedOem: true,
+      flightSource: "workingOem",
       isScored: true,
       lastLogAt: T1,
       updatedAt: T1,
